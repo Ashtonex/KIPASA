@@ -6,12 +6,18 @@ import Link from "next/link"
 export default async function NewProductPage() {
   const supabase = await createClient()
 
-  // 1. Fetch categories to satisfy the ProductForm requirement
-  // This prevents the "Property 'categories' is missing" build error.
-  const { data: categories } = await supabase
+  // 1. Fetch categories from the database
+  const { data: dbCategories } = await supabase
     .from("categories")
-    .select("*")
+    .select("id, name, slug")
     .order("name", { ascending: true })
+
+  // 2. Transform the data into the { label, value } format to fix the blank dropdown
+  // This ensures the map function in the ProductForm always finds a valid key
+  const formattedCategories = dbCategories?.map((cat) => ({
+    label: cat.name,
+    value: cat.slug || cat.id.toString(), // Priority to slug, fallback to ID as string
+  })) || []
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -38,8 +44,8 @@ export default async function NewProductPage() {
 
       {/* Main Configuration Engine */}
       <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-100 overflow-hidden border-none transition-all">
-        {/* FIX: Passing the fetched categories prop to satisfy TypeScript */}
-        <ProductForm categories={categories || []} />
+        {/* Pass the formatted categories to satisfy the ProductForm requirement */}
+        <ProductForm categories={formattedCategories} />
       </div>
     </div>
   )

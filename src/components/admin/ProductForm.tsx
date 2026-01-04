@@ -37,9 +37,8 @@ const initialState = {
   message: "",
 }
 
-// 1. HARDCODED FALLBACKS: Used if the DB call returns nothing
 const FALLBACK_CATEGORIES: Category[] = [
-{ label: "Tactical Wear", value: "tactical-wear" },
+  { label: "Tactical Wear", value: "tactical-wear" },
   { label: "Biker Wear", value: "biker-wear" },
   { label: "Outdoors", value: "outdoors" },
   { label: "Games", value: "games" },
@@ -63,6 +62,7 @@ export function ProductForm({
 }) {
   const [state, formAction, isPending] = useActionState(upsertProduct, initialState)
   
+  // AMENDED: Initialize with "" instead of undefined to keep inputs controlled
   const [imageUrl, setImageUrl] = useState<string>(product?.images?.[0] || "")
   const [uploading, setUploading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(product?.category || "")
@@ -72,7 +72,6 @@ export function ProductForm({
     setMounted(true)
   }, [])
 
-  // 2. Determine which list to use: DB categories or Fallbacks
   const displayCategories = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,14 +112,15 @@ export function ProductForm({
         </div>
       )}
 
+      {/* AMENDED: Ensuring hidden inputs are never undefined */}
       <input type="hidden" name="id" value={product?.id || ""} />
-      <input type="hidden" name="imageUrl" value={imageUrl} />
-      <input type="hidden" name="category" value={selectedCategory} />
+      <input type="hidden" name="imageUrl" value={imageUrl || ""} />
+      <input type="hidden" name="category" value={selectedCategory || ""} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Product Name</Label>
-          <Input name="name" defaultValue={product?.name} required />
+          <Input name="name" defaultValue={product?.name || ""} required />
         </div>
         
         <div className="space-y-2">
@@ -136,21 +136,19 @@ export function ProductForm({
           
           <Select 
             onValueChange={setSelectedCategory} 
-            value={selectedCategory}
+            value={selectedCategory || ""}
             required
           >
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent className="bg-white z-[100]">
-              {/* Render either DB categories or hardcoded ones */}
-              {displayCategories.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
+              {displayCategories.map((cat, idx) => (
+                <SelectItem key={`${cat.value}-${idx}`} value={cat.value}>
                   {cat.label}
                 </SelectItem>
               ))}
               
-              {/* Optional: Small badge to show if DB is empty */}
               {categories.length === 0 && (
                 <div className="p-2 border-t mt-1 text-[9px] text-amber-600 bg-amber-50 text-center uppercase font-bold">
                   Fallback Active (DB Empty)
@@ -169,7 +167,7 @@ export function ProductForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Price ($)</Label>
-          <Input name="price" type="number" step="0.01" defaultValue={product?.price} required />
+          <Input name="price" type="number" step="0.01" defaultValue={product?.price || ""} required />
         </div>
         <div className="space-y-2">
           <Label>Stock Quantity</Label>
