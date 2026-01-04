@@ -4,6 +4,37 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
+ * Triggered by Paynow Update Route (Fixes Vercel Build Error)
+ * Sends a simplified receipt upon digital payment verification.
+ */
+export async function sendReceiptEmail(email: string, orderId: string, amount: number) {
+  try {
+    await resend.emails.send({
+      from: 'Kipasa Store <orders@yourdomain.com>',
+      to: email,
+      subject: `Receipt for Order #${orderId.slice(0, 8).toUpperCase()}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+          <h2 style="color: #059669;">Payment Received</h2>
+          <p>Thank you for your payment of <strong>$${amount.toFixed(2)}</strong>.</p>
+          <p>Your order <strong>#${orderId.slice(0, 8).toUpperCase()}</strong> is now being processed by our system.</p>
+          <div style="margin-top: 20px;">
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/orders/${orderId}/track" 
+               style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              View Order Details
+            </a>
+          </div>
+        </div>
+      `
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Receipt email failed:", error);
+    return { success: false };
+  }
+}
+
+/**
  * Triggered by Webhook when Paynow confirms payment
  */
 export async function sendOrderConfirmation(email: string, orderId: string, totalAmount: number) {
@@ -143,7 +174,7 @@ export async function sendAbandonedCartEmail(email: string, firstName: string, c
           <div style="margin-top: 20px;">
             <a href="${process.env.NEXT_PUBLIC_SITE_URL}/checkout" 
                style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Complete My Order
+               Complete My Order
             </a>
           </div>
           <p style="margin-top: 25px; font-size: 12px; color: #6b7280;">

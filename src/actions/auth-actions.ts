@@ -3,6 +3,28 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
+/**
+ * AUTH ACTION: RESET PASSWORD
+ * Sends a password reset link via Supabase Auth.
+ * The redirectTo URL should be configured in your Supabase dashboard.
+ */
+export async function resetPasswordAction(prevState: any, formData: FormData) {
+  const supabase = await createClient()
+  const email = formData.get("email") as string
+
+  // Step 1: Request password reset email
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Ensure this path matches where you handle the new password entry
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/reset-password`,
+  })
+
+  if (error) {
+    return { error: error.message, success: false }
+  }
+
+  return { error: "", success: true }
+}
+
 // --- REGISTER ACTION ---
 export async function registerUser(prevState: any, formData: FormData) {
   const supabase = await createClient()
