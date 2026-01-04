@@ -1,7 +1,8 @@
 import type { Config } from "tailwindcss"
 
 const config = {
-  darkMode: ["class"],
+  // FIX: Changed ["class"] to "class" to satisfy Tailwind/TypeScript requirements
+  darkMode: "class", 
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -10,15 +11,15 @@ const config = {
   ],
   prefix: "",
   theme: {
-    // --- ADD/UPDATE THIS CONTAINER SECTION ---
+    // --- CONTAINER SECTION PRESERVED ---
     container: {
-      center: true,       // <--- This centers the container
-      padding: "2rem",    // <--- This adds gap on left/right for mobile
+      center: true,       // Centers the container automatically
+      padding: "2rem",    // Adds horizontal gap for mobile devices
       screens: {
         "2xl": "1400px",
       },
     },
-    // -----------------------------------------
+    // -----------------------------------
     extend: {
       colors: {
         border: "hsl(var(--border))",
