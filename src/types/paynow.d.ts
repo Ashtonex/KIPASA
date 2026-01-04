@@ -6,6 +6,8 @@ declare module 'paynow' {
         send(payment: any): Promise<any>;
         sendMobile(payment: any, phone: string, method: string): Promise<any>;
         pollTransaction(url: string): Promise<any>;
+        // Add these two lines to fix the Webhook build error
+        parseStatusUpdate(data: any): any;
         parseNotify(data: any): any;
     }
 }
