@@ -8,14 +8,17 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const payload = Object.fromEntries(formData)
 
-    // 1. Initialize Paynow with your credentials
+    // 1. Initialize Paynow with all 4 arguments to satisfy TypeScript [.d.ts]
+    // Note: We use empty strings for the URLs as they aren't used during webhook parsing.
     const paynow = new Paynow(
       process.env.PAYNOW_INTEGRATION_ID!,
-      process.env.PAYNOW_INTEGRATION_KEY!
+      process.env.PAYNOW_INTEGRATION_KEY!,
+      "", 
+      ""  
     )
 
     // 2. Validate the signature (Crucial for security in Zimbabwe)
-    // This ensures the request actually came from Paynow
+    // We use parseStatusUpdate to verify the Paynow Hash
     const response = paynow.parseStatusUpdate(payload)
 
     if (response.status.toLowerCase() === "paid" || response.status.toLowerCase() === "awaiting delivery") {
@@ -26,24 +29,22 @@ export async function POST(req: NextRequest) {
       const orderId = rawReference.replace(/^Order\s*#/, "").trim()
 
       // 3. Update the order status
-      // We check 'status' in the .eq() to ensure we don't trigger the email twice
       const { data: updatedOrder, error } = await supabase
         .from("orders")
         .update({ 
           status: "paid",
           paid_at: new Date().toISOString(),
-          paynow_reference: payload.paynowreference // Store for troubleshooting
+          paynow_reference: payload.paynowreference 
         })
         .eq("id", orderId)
-        .neq("status", "paid") // Optimization: Only update if not already paid
+        .neq("status", "paid") 
         .select("contact_email, total_amount, status") 
         .single()
 
       if (error) {
-        // If it's already updated (error code for single() with 0 rows), just ignore
         console.log("Order already processed or not found:", orderId)
       } else if (updatedOrder?.contact_email) {
-        // 4. Send confirmation receipt via Resend
+        // 4. Trigger the Resend email transmission
         await sendOrderConfirmation(
           updatedOrder.contact_email, 
           orderId, 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Paynow requires a 200 OK response to confirm receipt of the notification
+    // Paynow requires a 200 OK response to stop retrying the notification
     return new NextResponse(null, { status: 200 })
   } catch (error: any) {
     console.error("Webhook Execution Error:", error.message)
