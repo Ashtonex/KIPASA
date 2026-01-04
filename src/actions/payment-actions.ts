@@ -21,33 +21,36 @@ export async function initiatePayment(orderId: string, email: string, method: st
 
     if (error || !order) throw new Error("Order not found")
 
-    // --- NEW: SANITIZATION FIX FOR NEXT.JS 16 ---
-    // This ensures no trailing spaces or quotes break the Paynow Hash
+    // --- SANITIZATION & URL PREPARATION ---
     const integrationId = process.env.PAYNOW_INTEGRATION_ID?.trim();
     const integrationKey = process.env.PAYNOW_INTEGRATION_KEY?.trim();
     let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
 
-    // FIX: Ensure siteUrl always starts with http:// or https://
     if (!siteUrl.startsWith('http')) {
-      siteUrl = `http://${siteUrl}`;
+      siteUrl = `https://${siteUrl}`; // Defaulting to https for production safety
     }
 
     if (!integrationId || !integrationKey) {
       throw new Error("Paynow credentials missing in environment variables.");
     }
 
-    // 2. Initialize Paynow
-    const paynow = new Paynow(integrationId, integrationKey);
+    // Prepare URLs for the constructor
+    const resultUrl = `${siteUrl}/api/payments/webhook`;
+    const returnUrl = `${siteUrl}/checkout/success?orderId=${orderId}`;
 
-    // 3. Set URLs for status updates using the sanitized siteUrl
-    paynow.resultUrl = `${siteUrl}/api/payments/webhook`;
-    paynow.returnUrl = `${siteUrl}/checkout/success?orderId=${orderId}`;
+    // 2. Initialize Paynow with 4 arguments to satisfy TypeScript [.d.ts]
+    const paynow = new Paynow(
+      integrationId, 
+      integrationKey, 
+      resultUrl, 
+      returnUrl
+    );
 
-    // 4. Create the payment
+    // 3. Create the payment
     const payment = paynow.createPayment(`Order #${orderId.slice(0, 8)}`, email)
     payment.add("Kipasa Store Purchase", order.total_amount)
 
-    // 5. DETERMINE PAYMENT FLOW: Express (Mobile) vs. Redirect (Card)
+    // 4. DETERMINE PAYMENT FLOW: Express (Mobile) vs. Redirect (Card)
     let response;
     
     if (method === "mobile" && phone) {
@@ -62,7 +65,7 @@ export async function initiatePayment(orderId: string, email: string, method: st
     }
 
     if (response.success) {
-      // 6. Save Poll URL and instructions for your records
+      // 5. Save Poll URL and instructions for your records
       await supabase
         .from("orders")
         .update({ 
@@ -78,7 +81,6 @@ export async function initiatePayment(orderId: string, email: string, method: st
         instructions: response.instructions // Used for 'mobile' USSD prompt
       }
     } else {
-      // Log the exact error from Paynow to your terminal for debugging
       console.error("Paynow Error Details:", response.error)
       return { success: false, error: response.error }
     }
