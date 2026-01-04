@@ -3,7 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
-export async function updateSiteContent(formData: FormData) {
+// AMENDED: Added 'prevState' as the first parameter to satisfy useActionState signature
+export async function updateSiteContent(prevState: any, formData: FormData) {
   try {
     const supabase = await createClient()
     
@@ -19,7 +20,7 @@ export async function updateSiteContent(formData: FormData) {
 
     // 2. Handle Direct File Upload
     if (image_file && image_file.size > 0) {
-      // Create a clean filename with a timestamp to bypass browser caching
+      // Create a clean filename with a timestamp to avoid browser caching
       const fileExt = image_file.name.split('.').pop()
       const fileName = `${slug}-${Date.now()}.${fileExt}`
       
