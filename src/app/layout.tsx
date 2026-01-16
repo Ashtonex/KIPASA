@@ -6,7 +6,7 @@ import "./globals.css"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
 import { CartProvider } from "@/context/CartContext"
-import { Toaster } from "@/components/ui/sonner" 
+import { Toaster } from "sonner" // Updated import to 'sonner'
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -18,9 +18,8 @@ export const viewport: Viewport = {
   themeColor: "#2563eb", 
 }
 
-// AMENDED: Added Open Graph and Twitter metadata for rich sharing previews
 export const metadata: Metadata = {
-  metadataBase: new URL('https://blackwell-black.vercel.app'), // Required for absolute image paths
+  metadataBase: new URL('https://blackwell-black.vercel.app'),
   title: "Kipasa Store | Best Deals Online",
   description: "Shop the best products at Kipasa Store. Fast delivery in Zimbabwe.",
   openGraph: {
@@ -30,20 +29,20 @@ export const metadata: Metadata = {
     siteName: "Kipasa Store",
     images: [
       {
-        url: "/og-image.png", // Ensure this exists in your /public folder
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Kipasa Store - Quality Gear and Gifts",
       },
     ],
-    locale: "en_ZW", // Set to Zimbabwe locale
+    locale: "en_ZW",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Kipasa Store | Best Deals Online",
     description: "Shop the best products at Kipasa Store. Fast delivery in Zimbabwe.",
-    images: ["/og-image.png"], // Same image used for Twitter
+    images: ["/og-image.png"],
   },
 }
 
@@ -63,7 +62,9 @@ export default function RootLayout({
             </main>
             <Footer />
             <WhatsAppButton />
-            <Toaster richColors position="top-center" />
+            
+            {/* TOASTER ADDED HERE - top-right as requested */}
+            <Toaster richColors position="top-right" closeButton /> 
           </div>
         </CartProvider>
 

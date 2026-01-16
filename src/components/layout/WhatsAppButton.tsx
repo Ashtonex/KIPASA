@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react"
 
 export function WhatsAppButton() {
-  const phoneNumber = "263776905673" // Your Mutare support number
+  const phoneNumber = "263774307469" // Your Mutare support number
   const message = "Hi Kipasa Store, I have a question about my order."
 
   return (

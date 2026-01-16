@@ -6,15 +6,18 @@ import { Facebook, Instagram, Twitter, MapPin, Phone, Mail, Camera } from "lucid
 export async function Footer() {
   const supabase = await createClient()
 
-  // Fetch top 5 categories for the footer links dynamically
   const { data: categories } = await supabase
     .from("categories")
     .select("name, slug")
     .limit(5)
 
   return (
-    <footer className="bg-black text-white border-t border-white/10 mt-auto">
-      <div className="container py-12 md:py-16">
+    <footer className="w-full bg-black text-white border-t border-white/10 mt-auto">
+      {/* CHANGED BELOW: 
+        1. Added 'flex flex-col items-center' to the parent 
+        2. Switched 'container' to 'w-full max-w-7xl' for more reliable centering
+      */}
+      <div className="w-full max-w-7xl mx-auto px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4 lg:gap-12">
           
           {/* Column 1: Brand, Socials & Newsletter */}
@@ -71,7 +74,7 @@ export async function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: Customer Care & Staff Portal */}
+          {/* Column 3: Support */}
           <div>
             <h3 className="mb-6 text-sm font-bold uppercase tracking-wider text-gray-400">Support</h3>
             <ul className="space-y-3 text-sm">
@@ -80,7 +83,6 @@ export async function Footer() {
               <li><Link href="/returns" className="text-gray-300 hover:text-yellow-400 transition-colors">Returns Policy</Link></li>
               <li><Link href="/shipping" className="text-gray-300 hover:text-yellow-400 transition-colors">Shipping Info</Link></li>
               
-              {/* --- ADDED STAFF PORTAL LINK --- */}
               <li className="pt-4 border-t border-white/5">
                 <Link 
                   href="/admin/staff/scanner" 
@@ -117,7 +119,7 @@ export async function Footer() {
         {/* Bottom Copyright */}
         <div className="mt-12 border-t border-white/10 pt-8 flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} Kipasa Store. Built for Zimbabwe 🇿🇼
+            © {new Date().getFullYear()} Kipasa Store. By Flectere.
           </p>
           <div className="flex gap-6 text-xs text-gray-500">
              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

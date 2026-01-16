@@ -1,0 +1,34 @@
+"use client"
+
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useDebouncedCallback } from "use-debounce"
+import { Search } from "lucide-react"
+
+export function StaffSearch() {
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const { replace } = useRouter()
+
+  // This function waits 300ms after you stop typing before updating the URL
+  const handleSearch = useDebouncedCallback((term: string) => {
+    const params = new URLSearchParams(searchParams)
+    if (term) {
+      params.set("query", term)
+    } else {
+      params.delete("query")
+    }
+    replace(`${pathname}?${params.toString()}`)
+  }, 300)
+
+  return (
+    <div className="relative flex-1 max-w-md">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <input
+        className="w-full rounded-md border border-gray-200 py-2 pl-10 pr-4 text-sm outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all"
+        placeholder="Search staff by email..."
+        onChange={(e) => handleSearch(e.target.value)}
+        defaultValue={searchParams.get("query")?.toString()}
+      />
+    </div>
+  )
+}

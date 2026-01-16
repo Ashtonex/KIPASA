@@ -143,3 +143,84 @@
     display: none !important;
   }
 }
+
+@media print {
+  /* Forces the browser to print colors and background images (like QR codes) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure the QR container isn't hidden */
+  .qr-container {
+    display: block !important;
+  }
+}
+
+/* src/app/globals.css */
+
+@media print {
+  /* Force background colors (for QR codes) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure SVGs render */
+  svg {
+    display: block !important;
+    max-width: 100% !important;
+  }
+
+  /* Prevent content clipping */
+  body {
+    overflow: visible !important;
+  }
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* src/app/globals.css */
+
+@media screen {
+  .print-only-force {
+    /* Don't use display:none. Use this to keep it in the DOM but invisible */
+    visibility: hidden;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: absolute;
+  }
+}
+
+@media print {
+  .screen-only-force {
+    display: none !important;
+  }
+  
+  .print-only-force {
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    position: static !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Force the canvas/svg inside to show */
+  .print-only-force canvas, 
+  .print-only-force svg {
+    display: block !important;
+    max-width: 100% !important;
+  }
+}
