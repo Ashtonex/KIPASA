@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Disables Vercel Image Optimization to bypass the 5,000 limit
+    unoptimized: true,
+    
     remotePatterns: [
       {
         protocol: 'https',
