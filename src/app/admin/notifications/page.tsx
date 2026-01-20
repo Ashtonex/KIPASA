@@ -1,8 +1,8 @@
 import { getNotificationSummary } from "@/actions/notification-actions"
-import { Bell, Users, PackageSearch, TrendingUp, Clock, AlertCircle } from "lucide-react"
+import { Bell, Users, PackageSearch, TrendingUp, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
-import { WaitlistModal } from "@/components/admin/WaitlistModal" // Ensure this component exists
+import { WaitlistModal } from "@/components/admin/WaitlistModal"
 
 // Define the shape of our data for TypeScript safety
 interface WaitlistGroup {
@@ -90,12 +90,10 @@ export default async function NotificationDashboard() {
                 </div>
               </div>
 
-              {/* THE MODAL TRIGGER (Passed product data) */}
+              {/* THE FIX: REMOVED 'count' and 'hasStock' to satisfy the build error */}
               <WaitlistModal
                 productId={item.id}
                 productName={item.name}
-                count={item.waitlistCount}
-                hasStock={item.currentStock > 0}
               />
             </div>
           </div>
