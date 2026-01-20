@@ -3,36 +3,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, ShoppingCart, Package, Activity, LayoutGrid, TrendingUp, Zap } from "lucide-react"
 import { OverviewCharts } from "@/components/admin/OverviewCharts"
 
+// --- HELPER: Calculate Monthly Revenue Dynamically ---
+async function getRevenueData(supabase: any) {
+  // 1. Fetch only relevant columns for orders that are NOT cancelled
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("total_amount, created_at, status")
+    .in("status", ["paid", "shipped", "delivered"]) // Only count valid revenue
+
+  // 2. Generate the "Last 6 Months" labels dynamically
+  const months = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    // Create label like "Sep", "Oct", "Nov"
+    const monthKey = d.toLocaleString('default', { month: 'short' })
+    months.push({
+      name: monthKey,
+      total: 0,
+      monthIndex: d.getMonth(),
+      year: d.getFullYear()
+    })
+  }
+
+  // 3. Bucket the orders into these months
+  if (orders) {
+    orders.forEach((order: any) => {
+      const orderDate = new Date(order.created_at)
+      const orderMonth = orderDate.getMonth()
+      const orderYear = orderDate.getFullYear()
+
+      // Find the matching month in our generated array
+      const bucket = months.find(m => m.monthIndex === orderMonth && m.year === orderYear)
+      if (bucket) {
+        bucket.total += order.total_amount || 0
+      }
+    })
+  }
+
+  return months
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
 
   // 1. Fetch Stats & Chart Data in Parallel
-  // UPDATED: Now includes 'shipped' and 'delivered' in revenue calculation
-  const [ordersRes, revenueRes, productsRes, categoriesRes] = await Promise.all([
+  const [ordersRes, productsRes, categoriesRes, chartData] = await Promise.all([
     supabase.from("orders").select("id", { count: "exact", head: true }),
-    
-    // Logic: Revenue is "locked in" for any order that isn't cancelled/pending
-    supabase.from("orders")
-      .select("total_amount, created_at, status")
-      .in("status", ["paid", "shipped", "delivered"]),
-    
     supabase.from("products").select("id", { count: "exact", head: true }),
-
     supabase.from("categories").select("id", { count: "exact", head: true }),
+    // Call our new helper function here
+    getRevenueData(supabase)
   ])
 
-  // 2. Calculate Stats
-  const totalRevenue = revenueRes.data?.reduce((acc, order) => acc + order.total_amount, 0) || 0
+  // 2. Calculate Lifetime Total Revenue (Sum of all bars in the chart + historical)
+  // Note: We might want a separate query for lifetime total if the chart only shows 6 months.
+  // For accuracy, let's do a quick separate sum for the "Gross Volume" card.
+  const { data: allRevenue } = await supabase
+    .from("orders")
+    .select("total_amount")
+    .in("status", ["paid", "shipped", "delivered"])
 
-  // 3. Mock Chart Data (Grouped by performance nodes)
-  const chartData = [
-    { name: "Jan", total: totalRevenue * 0.4 },
-    { name: "Feb", total: totalRevenue * 0.6 },
-    { name: "Mar", total: totalRevenue * 0.55 },
-    { name: "Apr", total: totalRevenue * 0.85 },
-    { name: "May", total: totalRevenue * 0.7 },
-    { name: "Jun", total: totalRevenue },
-  ]
+  const totalRevenue = allRevenue?.reduce((acc, order) => acc + order.total_amount, 0) || 0
 
   return (
     <div className="space-y-8 p-6 lg:p-10 bg-slate-50/50 min-h-screen">
@@ -55,7 +87,7 @@ export default async function AdminDashboardPage() {
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black text-slate-900">${totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-black text-slate-900">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-[10px] text-green-600 font-black mt-1 uppercase">Receipts Verified</p>
           </CardContent>
         </Card>
@@ -88,7 +120,7 @@ export default async function AdminDashboardPage() {
             <LayoutGrid className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black text-slate-900">13</div>
+            <div className="text-3xl font-black text-slate-900">{categoriesRes.count || 13}</div>
             <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">Market Segments</p>
           </CardContent>
         </Card>
@@ -100,6 +132,7 @@ export default async function AdminDashboardPage() {
           <TrendingUp className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-black text-slate-800 uppercase tracking-tighter">Performance Telemetry</h3>
         </div>
+        {/* Pass the dynamic data here */}
         <OverviewCharts data={chartData} />
       </div>
 
@@ -112,8 +145,8 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_12px_#22c55e]" />
-                <div className="text-2xl font-black">Mainframe Online</div>
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_12px_#22c55e]" />
+              <div className="text-2xl font-black">Mainframe Online</div>
             </div>
             <p className="text-[10px] text-slate-400 mt-2 font-mono">Lat: 14ms | Option 2 (Flat DB) | v1.0.4</p>
           </CardContent>

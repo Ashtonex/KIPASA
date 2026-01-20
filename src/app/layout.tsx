@@ -6,7 +6,7 @@ import "./globals.css"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
 import { CartProvider } from "@/context/CartContext"
-import { Toaster } from "sonner" // Updated import to 'sonner'
+import { Toaster } from "sonner" // Ensure you have installed sonner: npm install sonner
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -14,8 +14,8 @@ const inter = Inter({ subsets: ["latin"] })
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, 
-  themeColor: "#2563eb", 
+  maximumScale: 1,
+  themeColor: "#2563eb",
 }
 
 export const metadata: Metadata = {
@@ -52,8 +52,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning> 
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning>
+        {/* 1. Provider wraps the entire UI */}
         <CartProvider>
           <div className="relative flex min-h-screen flex-col bg-background">
             <Navbar />
@@ -62,12 +63,13 @@ export default function RootLayout({
             </main>
             <Footer />
             <WhatsAppButton />
-            
-            {/* TOASTER ADDED HERE - top-right as requested */}
-            <Toaster richColors position="top-right" closeButton /> 
+
+            {/* 2. Global Toast Notifications */}
+            <Toaster richColors position="top-right" closeButton />
           </div>
         </CartProvider>
 
+        {/* 3. Vercel Analytics */}
         <Analytics />
         <SpeedInsights />
       </body>
