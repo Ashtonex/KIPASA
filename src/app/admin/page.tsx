@@ -12,7 +12,9 @@ async function getRevenueData(supabase: any) {
     .in("status", ["paid", "shipped", "delivered"]) // Only count valid revenue
 
   // 2. Generate the "Last 6 Months" labels dynamically
-  const months = []
+  // FIX: Added explicit type annotation here to satisfy TypeScript
+  const months: { name: string; total: number; monthIndex: number; year: number }[] = []
+
   for (let i = 5; i >= 0; i--) {
     const d = new Date()
     d.setMonth(d.getMonth() - i)
@@ -57,8 +59,6 @@ export default async function AdminDashboardPage() {
   ])
 
   // 2. Calculate Lifetime Total Revenue (Sum of all bars in the chart + historical)
-  // Note: We might want a separate query for lifetime total if the chart only shows 6 months.
-  // For accuracy, let's do a quick separate sum for the "Gross Volume" card.
   const { data: allRevenue } = await supabase
     .from("orders")
     .select("total_amount")
