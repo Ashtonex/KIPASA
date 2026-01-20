@@ -1,10 +1,11 @@
-"use client" // Changed to Client Component for better action handling
+"use client"
 
-import { useActionState } from "react" // React 19 standard for form actions
+import { useActionState, useEffect, useState } from "react"
 import { updateSiteContent } from "@/actions/content-actions"
+import { createClient } from "@/lib/supabase/client"
 import { Upload, Link as LinkIcon, Image as ImageIcon, Sparkles, Loader2, CheckCircle2 } from "lucide-react"
 
-// We define a wrapper for the form to handle state for each section separately
+// --- THE FORM COMPONENT ---
 function ContentForm({ initialData, slug, title, icon: Icon }: any) {
   const [state, formAction, isPending] = useActionState(updateSiteContent, null)
 
@@ -21,27 +22,36 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
               <CheckCircle2 className="w-4 h-4" /> Sync_Complete
             </div>
           )}
+          {state?.error && (
+            <div className="text-red-500 text-[10px] font-bold uppercase">
+              Error: {state.error}
+            </div>
+          )}
         </div>
-        
+
         <form action={formAction} className="space-y-6">
+          {/* --- CRITICAL HIDDEN INPUTS --- */}
           <input type="hidden" name="slug" value={slug} />
-          
+
+          {/* This prevents the image from being deleted if you only update text */}
+          <input type="hidden" name="current_image_url" value={initialData?.image_url || ""} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Transmission Title</label>
-              <input 
-                name="title" 
-                defaultValue={initialData?.title} 
-                className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl transition-all outline-none font-bold" 
+              <input
+                name="title"
+                defaultValue={initialData?.title || ""}
+                className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl transition-all outline-none font-bold"
               />
             </div>
             {slug === "hero-banner" && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Action Button Text</label>
-                <input 
-                  name="button_text" 
-                  defaultValue={initialData?.button_text} 
-                  className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl transition-all outline-none font-bold" 
+                <input
+                  name="button_text"
+                  defaultValue={initialData?.button_text || ""}
+                  className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl transition-all outline-none font-bold"
                 />
               </div>
             )}
@@ -51,19 +61,21 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">
               {slug === "hero-banner" ? "Global Broadcast Message" : "Sector Meta Description"}
             </label>
-            <textarea 
-              name="subtitle" 
-              defaultValue={initialData?.subtitle} 
-              className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl h-24 transition-all outline-none resize-none font-bold" 
+            <textarea
+              name="subtitle"
+              defaultValue={initialData?.subtitle || ""}
+              className="w-full p-4 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 rounded-2xl h-24 transition-all outline-none resize-none font-bold"
             />
           </div>
-          
+
           {slug === "hero-banner" && (
             <div className="space-y-4">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Visual Asset Selection</label>
-              
+
               {initialData?.image_url && (
                 <div className="relative rounded-[1.5rem] overflow-hidden border-none aspect-[21/9] mb-4 shadow-inner bg-slate-100">
+                  {/* Using unoptimized img tag to bypass Vercel limits if needed */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={initialData.image_url} alt="Current Banner" className="object-cover w-full h-full" />
                 </div>
               )}
@@ -82,18 +94,19 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
                     <LinkIcon className="w-4 h-4" />
                     <span className="text-[10px] font-black uppercase tracking-widest">External_Hash_URL</span>
                   </div>
-                  <input 
-                    name="image_url" 
-                    defaultValue={initialData?.image_url} 
-                    className="w-full p-3 bg-white border border-slate-100 rounded-xl text-xs font-mono outline-none focus:border-blue-600" 
+                  <input
+                    name="image_url"
+                    defaultValue={initialData?.image_url || ""}
+                    placeholder="https://..."
+                    className="w-full p-3 bg-white border border-slate-100 rounded-xl text-xs font-mono outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isPending}
             className="w-full md:w-auto bg-slate-900 text-white font-black py-4 px-12 rounded-2xl hover:bg-blue-600 active:scale-95 transition-all shadow-xl shadow-slate-200 uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 disabled:opacity-70"
           >
@@ -109,13 +122,10 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
   )
 }
 
-// Since we need to fetch data initially, we can pass it from a parent or fetch in an effect
-// To keep it simple and fix your error immediately:
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client" // Using client-side supabase here
-
+// --- MAIN PAGE COMPONENT ---
 export default function ContentManagementPage() {
   const [content, setContent] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
@@ -124,13 +134,23 @@ export default function ContentManagementPage() {
         .from("site_content")
         .select("*")
         .in("slug", ["hero-banner", "just-for-you"])
+
       if (data) setContent(data)
+      setLoading(false)
     }
     fetchData()
   }, [])
 
   const hero = content?.find(c => c.slug === "hero-banner")
   const justForYou = content?.find(c => c.slug === "just-for-you")
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-10">
@@ -139,8 +159,25 @@ export default function ContentManagementPage() {
         <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest mt-1">Status: <span className="text-blue-600">Configuration_Active</span></p>
       </header>
 
-      <ContentForm initialData={hero} slug="hero-banner" title="Main Hero Banner" icon={ImageIcon} />
-      <ContentForm initialData={justForYou} slug="just-for-you" title="Curated Sector" icon={Sparkles} />
+      {/* NOTE: The 'key' prop is VITAL. 
+        When data loads, 'hero?.updated_at' changes, forcing the component to re-render 
+        and actually populate the 'defaultValue' fields. 
+      */}
+      <ContentForm
+        key={`hero-${hero?.updated_at || 'new'}`}
+        initialData={hero}
+        slug="hero-banner"
+        title="Main Hero Banner"
+        icon={ImageIcon}
+      />
+
+      <ContentForm
+        key={`jfy-${justForYou?.updated_at || 'new'}`}
+        initialData={justForYou}
+        slug="just-for-you"
+        title="Curated Sector"
+        icon={Sparkles}
+      />
     </div>
   )
 }

@@ -38,32 +38,35 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      
-      {/* --- HERO SECTION (Dynamic) --- */}
-      <section className="relative h-[450px] md:h-[550px] w-full overflow-hidden bg-black text-white">
-        {/* Use Dynamic Image URL from Database if available */}
-        {heroData?.image_url ? (
-          <div className="absolute inset-0">
-             <img src={heroData.image_url} alt="Banner" className="w-full h-full object-cover opacity-60" />
-             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-900 via-fuchsia-800 to-orange-500 opacity-90" />
-        )}
-        
-        <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-white opacity-10 blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-10 right-10 h-64 w-64 rounded-full bg-yellow-400 opacity-20 blur-3xl"></div>
-        
+
+      {/* --- HERO SECTION (AMENDED) --- */}
+      {/* We apply the background image directly to the style prop. 
+          This guarantees it renders if the URL exists. */}
+      <section
+        className="relative h-[450px] md:h-[550px] w-full overflow-hidden text-white bg-gray-900 bg-cover bg-center bg-no-repeat transition-all duration-500"
+        style={{
+          backgroundImage: heroData?.image_url
+            // If image exists: Dark overlay + The Image
+            ? `linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2)), url('${heroData.image_url}')`
+            // Fallback: The standard purple/orange gradient
+            : 'linear-gradient(to right, #4c1d95, #a21caf, #f97316)'
+        }}
+      >
+
+        {/* Animated Background Blobs (Optional - they sit on top of the bg image now for effect) */}
+        <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-white opacity-10 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-10 right-10 h-64 w-64 rounded-full bg-yellow-400 opacity-10 blur-3xl"></div>
+
         <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 relative z-10 flex h-full flex-col justify-center items-center text-center gap-6">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider shadow-xl shadow-black/20">
             <Zap className="h-3 w-3 fill-black" /> {heroData?.title ? "Live Updates" : "Flash Deals Live"}
           </div>
-          
+
           <div className="space-y-2">
-            <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight sm:text-7xl drop-shadow-md">
+            <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl drop-shadow-lg">
               {heroData?.title?.includes(' ') ? (
                 <>
-                  {heroData.title.split(' ').slice(0, -1).join(' ')} <br />
+                  {heroData.title.split(' ').slice(0, -1).join(' ')} <br className="hidden md:block" />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
                     {heroData.title.split(' ').slice(-1)}
                   </span>
@@ -72,16 +75,16 @@ export default async function Home() {
                 heroData?.title || "Mid-Season Blowout Sale"
               )}
             </h1>
-            <p className="max-w-lg mx-auto text-lg text-gray-200 md:text-xl font-light">
+            <p className="max-w-lg mx-auto text-lg text-gray-100 md:text-xl font-medium drop-shadow-md">
               {heroData?.subtitle || "Up to 70% OFF on trending items."}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-100 font-bold px-8 h-12 text-md rounded-full shadow-lg transition-transform hover:scale-105">
+            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-200 font-bold px-8 h-12 text-md rounded-full shadow-xl transition-transform hover:scale-105 border-0">
               <Link href="/products">{heroData?.button_text || "Shop Now"}</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white text-white bg-transparent hover:bg-white/20 px-8 h-12 text-md rounded-full transition-all">
+            <Button asChild size="lg" variant="outline" className="border-2 border-white text-white bg-transparent hover:bg-white/20 px-8 h-12 text-md rounded-full transition-all">
               <Link href="/products?category=clothing">Explore Fashion</Link>
             </Button>
           </div>
@@ -92,14 +95,14 @@ export default async function Home() {
       <section className="border-b bg-muted/20 py-8">
         <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 flex flex-col items-center">
           <div className="flex items-center justify-center gap-2 mb-6 text-primary">
-             <Tag className="h-5 w-5" />
-             <h3 className="font-bold text-lg uppercase tracking-tight">Shop by Category</h3>
+            <Tag className="h-5 w-5" />
+            <h3 className="font-bold text-lg uppercase tracking-tight">Shop by Category</h3>
           </div>
           <div className="flex gap-4 md:gap-8 overflow-x-auto pb-4 w-full justify-center scrollbar-hide snap-x">
             {["All", "Clothing", "Electronics", "Home", "Beauty", "Footwear", "Accessories"].map((name) => (
-              <Link 
-                key={name} 
-                href={name === "All" ? "/products" : `/products?category=${name.toLowerCase()}`} 
+              <Link
+                key={name}
+                href={name === "All" ? "/products" : `/products?category=${name.toLowerCase()}`}
                 className="flex flex-col items-center gap-3 min-w-[80px] snap-start group"
               >
                 <div className="h-20 w-20 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all group-hover:shadow-md">
@@ -116,25 +119,25 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* --- FLASH DEALS SECTION (Dynamic Filter) --- */}
+      {/* --- FLASH DEALS SECTION --- */}
       {flashSale && flashSale.length > 0 && (
         <section className="bg-gradient-to-b from-red-50 to-background py-12">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                 <div className="bg-red-600 text-white p-2 rounded-lg shadow-md animate-bounce">
-                   <Flame className="h-6 w-6" />
-                 </div>
-                 <div>
-                   <h2 className="text-2xl font-black tracking-tighter text-red-700 uppercase">Flash Deals</h2>
-                   <p className="text-xs text-red-600 font-bold">Mutare's hottest picks right now!</p>
-                 </div>
+                <div className="bg-red-600 text-white p-2 rounded-lg shadow-md animate-bounce">
+                  <Flame className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black tracking-tighter text-red-700 uppercase">Flash Deals</h2>
+                  <p className="text-xs text-red-600 font-bold">Mutare's hottest picks right now!</p>
+                </div>
               </div>
               <Link href="/products" className="text-sm font-bold hover:underline flex items-center text-red-600">
                 View All Deals <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {flashSale.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -144,22 +147,22 @@ export default async function Home() {
         </section>
       )}
 
-      {/* --- JUST FOR YOU (Dynamic Content & Filter) --- */}
+      {/* --- JUST FOR YOU --- */}
       <section className="container mx-auto py-20 px-4 md:px-6">
         <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Sparkles className="h-5 w-5 text-amber-500 fill-amber-500" />
-              <span className="text-xs font-black tracking-[0.2em] text-amber-600 uppercase">Personalized</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter relative inline-block">
-              {justForYouText?.title || "Just For You"}
-              <span className="absolute -bottom-2 left-0 w-full h-2 bg-primary/10 -z-10"></span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-lg mx-auto font-medium">
-              {justForYouText?.subtitle || "Handpicked favorites chosen specifically for your style and home."}
-            </p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-5 w-5 text-amber-500 fill-amber-500" />
+            <span className="text-xs font-black tracking-[0.2em] text-amber-600 uppercase">Personalized</span>
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter relative inline-block">
+            {justForYouText?.title || "Just For You"}
+            <span className="absolute -bottom-2 left-0 w-full h-2 bg-primary/10 -z-10"></span>
+          </h2>
+          <p className="text-muted-foreground mt-4 max-w-lg mx-auto font-medium">
+            {justForYouText?.subtitle || "Handpicked favorites chosen specifically for your style and home."}
+          </p>
         </div>
-        
+
         {justForYou && justForYou.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10">
             {justForYou.map((product) => (
@@ -169,7 +172,7 @@ export default async function Home() {
         ) : (
           <div className="text-center py-10 text-muted-foreground italic">No featured products currently.</div>
         )}
-        
+
         <div className="mt-16 text-center">
           <Button asChild size="lg" variant="outline" className="px-12 rounded-full font-black border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all">
             <Link href="/products">View All Products</Link>
