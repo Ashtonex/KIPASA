@@ -68,7 +68,8 @@ export function OverviewCharts({ data }: ChartProps) {
                 width={60}
               />
               <Tooltip
-                formatter={(value: number) => [tooltipFormatter(value), "Revenue"]}
+                // FIX: Use 'any' type here to satisfy Recharts strict typing during build
+                formatter={(value: any) => [tooltipFormatter(value as number), "Revenue"]}
                 contentStyle={{
                   backgroundColor: "#fff",
                   borderRadius: "12px",
@@ -93,7 +94,6 @@ export function OverviewCharts({ data }: ChartProps) {
       {/* 2. BAR CHART: Magnitude per month */}
       <Card className="col-span-3 rounded-[2rem] border-none shadow-sm bg-white">
         <CardHeader>
-          {/* RENAMED to reflect actual data (Time) instead of "Category" */}
           <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Monthly Volume</CardTitle>
         </CardHeader>
         <CardContent>
@@ -109,7 +109,8 @@ export function OverviewCharts({ data }: ChartProps) {
               <YAxis hide />
               <Tooltip
                 cursor={{ fill: '#f8fafc' }}
-                formatter={(value: number) => [tooltipFormatter(value), "Volume"]}
+                // FIX: Use 'any' type here as well
+                formatter={(value: any) => [tooltipFormatter(value as number), "Volume"]}
                 contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }}
               />
               <Bar
