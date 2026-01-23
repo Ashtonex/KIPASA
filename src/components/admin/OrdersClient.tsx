@@ -1,13 +1,20 @@
 "use client"
 
 import { useState } from "react"
-// CHANGED: Import the direct action we created for simple status updates
 import { updateOrderStatusDirect } from "@/actions/admin-order-actions"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, CreditCard, Box, Search, Filter } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+
+// 1. Define strict types for the StatusSelect component
+interface StatusSelectProps {
+    status: string
+    onChange: (value: string) => void
+    isLoading: boolean
+    fullWidth?: boolean
+}
 
 type Order = {
     id: string
@@ -34,7 +41,6 @@ export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         setLoadingId(orderId)
         try {
-            // CHANGED: Use the direct function that accepts 2 arguments
             await updateOrderStatusDirect(orderId, newStatus)
             toast.success(`Order marked as ${newStatus}`)
         } catch (error) {
@@ -85,10 +91,11 @@ export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
                                 <td className="p-4 text-slate-500">{format(new Date(order.created_at), "MMM d, yyyy")}</td>
                                 <td className="p-4 font-black text-slate-900">${order.total_amount.toFixed(2)}</td>
                                 <td className="p-4">
+                                    {/* FIX 1: Explicitly type 'val' as string */}
                                     <StatusSelect
                                         status={order.status}
                                         isLoading={loadingId === order.id}
-                                        onChange={(val) => handleStatusChange(order.id, val)}
+                                        onChange={(val: string) => handleStatusChange(order.id, val)}
                                     />
                                 </td>
                             </tr>
@@ -131,10 +138,11 @@ export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
                         {/* Action Area */}
                         <div className="pt-2">
                             <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Update Status</label>
+                            {/* FIX 2: Explicitly type 'val' as string here too */}
                             <StatusSelect
                                 status={order.status}
                                 isLoading={loadingId === order.id}
-                                onChange={(val) => handleStatusChange(order.id, val)}
+                                onChange={(val: string) => handleStatusChange(order.id, val)}
                                 fullWidth
                             />
                         </div>
@@ -146,8 +154,8 @@ export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
     )
 }
 
-// Sub-component for the dropdown to keep code clean
-function StatusSelect({ status, onChange, isLoading, fullWidth }: any) {
+// Sub-component with Strict Types
+function StatusSelect({ status, onChange, isLoading, fullWidth }: StatusSelectProps) {
     return (
         <Select value={status} onValueChange={onChange} disabled={isLoading}>
             <SelectTrigger className={`h-9 bg-white border-slate-200 rounded-lg ${fullWidth ? 'w-full' : 'w-[140px]'}`}>
