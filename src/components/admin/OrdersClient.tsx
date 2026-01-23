@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { updateOrderStatus } from "@/actions/admin-order-actions"
+// CHANGED: Import the direct action we created for simple status updates
+import { updateOrderStatusDirect } from "@/actions/admin-order-actions"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, CreditCard, User, Box, Search, Filter } from "lucide-react"
+import { Calendar, CreditCard, Box, Search, Filter } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 
@@ -13,7 +14,7 @@ type Order = {
     created_at: string
     total_amount: number
     status: string
-    customer_name?: string // Adjust based on your actual DB relations
+    customer_name?: string
     payment_method?: string
 }
 
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
     shipped: "bg-purple-100 text-purple-700 border-purple-200",
     delivered: "bg-green-100 text-green-700 border-green-200",
     cancelled: "bg-red-100 text-red-700 border-red-200",
+    pending_cash: "bg-orange-100 text-orange-700 border-orange-200"
 }
 
 export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
@@ -32,7 +34,8 @@ export function OrdersClient({ initialOrders }: { initialOrders: any[] }) {
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         setLoadingId(orderId)
         try {
-            await updateOrderStatus(orderId, newStatus)
+            // CHANGED: Use the direct function that accepts 2 arguments
+            await updateOrderStatusDirect(orderId, newStatus)
             toast.success(`Order marked as ${newStatus}`)
         } catch (error) {
             toast.error("Failed to update status")
@@ -156,6 +159,7 @@ function StatusSelect({ status, onChange, isLoading, fullWidth }: any) {
                 <SelectItem value="shipped">Shipped</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="pending_cash">Pending Cash</SelectItem>
             </SelectContent>
         </Select>
     )
