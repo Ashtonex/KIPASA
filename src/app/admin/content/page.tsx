@@ -11,22 +11,28 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
 
   return (
     <div className="bg-white rounded-[2rem] shadow-xl border-none overflow-hidden transition-all mb-10">
-      <section className="p-8">
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
+      <section className="p-5 md:p-8"> {/* Adjusted padding for mobile */}
+
+        {/* Header Section: Stacks on mobile, row on desktop */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-50">
           <div className="flex items-center gap-2">
             <Icon className={`w-5 h-5 ${slug === 'hero-banner' ? 'text-blue-600' : 'text-amber-500'}`} />
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">{title}</h2>
           </div>
-          {state?.success && (
-            <div className="flex items-center gap-2 text-green-600 text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
-              <CheckCircle2 className="w-4 h-4" /> Sync_Complete
-            </div>
-          )}
-          {state?.error && (
-            <div className="text-red-500 text-[10px] font-bold uppercase">
-              Error: {state.error}
-            </div>
-          )}
+
+          {/* Status Messages */}
+          <div className="min-h-[20px]">
+            {state?.success && (
+              <div className="flex items-center gap-2 text-green-600 text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
+                <CheckCircle2 className="w-4 h-4" /> Sync_Complete
+              </div>
+            )}
+            {state?.error && (
+              <div className="text-red-500 text-[10px] font-bold uppercase">
+                Error: {state.error}
+              </div>
+            )}
+          </div>
         </div>
 
         <form action={formAction} className="space-y-6">
@@ -36,6 +42,7 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
           {/* This prevents the image from being deleted if you only update text */}
           <input type="hidden" name="current_image_url" value={initialData?.image_url || ""} />
 
+          {/* Grid: 1 column on mobile, 2 on desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Transmission Title</label>
@@ -74,12 +81,12 @@ function ContentForm({ initialData, slug, title, icon: Icon }: any) {
 
               {initialData?.image_url && (
                 <div className="relative rounded-[1.5rem] overflow-hidden border-none aspect-[21/9] mb-4 shadow-inner bg-slate-100">
-                  {/* Using unoptimized img tag to bypass Vercel limits if needed */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={initialData.image_url} alt="Current Banner" className="object-cover w-full h-full" />
                 </div>
               )}
 
+              {/* Upload Grid: Stacks on mobile */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative group cursor-pointer">
                   <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition-all">
@@ -153,9 +160,9 @@ export default function ContentManagementPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-10">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-10">
       <header>
-        <h1 className="text-3xl font-black tracking-tight text-gray-900 uppercase">Site Pipeline</h1>
+        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 uppercase">Site Pipeline</h1>
         <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest mt-1">Status: <span className="text-blue-600">Configuration_Active</span></p>
       </header>
 

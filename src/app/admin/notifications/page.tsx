@@ -19,22 +19,26 @@ export default async function NotificationDashboard() {
   const summary = await getNotificationSummary() as WaitlistGroup[]
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 bg-slate-50/50 min-h-screen">
+    // ADJUSTED: Changed p-8 to p-4 md:p-8 for better mobile spacing
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-8 bg-slate-50/50 min-h-screen">
+
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight flex items-center gap-3 text-slate-900">
-          <Bell className="text-blue-600 h-8 w-8 fill-blue-600/10" /> Restock Waitlist
+        {/* ADJUSTED: Responsive font size */}
+        <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 text-slate-900">
+          <Bell className="text-blue-600 h-6 w-6 md:h-8 md:w-8 fill-blue-600/10" />
+          Restock Waitlist
         </h1>
-        <p className="text-slate-500 font-medium">
+        <p className="text-slate-500 font-medium text-sm md:text-base">
           Monitor demand for out-of-stock products in Mutare.
         </p>
       </header>
 
-      {/* GRID LAYOUT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* GRID LAYOUT: Stacks on mobile (grid-cols-1), expands on larger screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {summary.map((item) => (
           <div
             key={item.id}
-            className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all relative overflow-hidden group"
+            className="bg-white border border-slate-100 rounded-2xl md:rounded-[2rem] p-5 md:p-6 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all relative overflow-hidden group"
           >
             {/* HIGH DEMAND BADGE */}
             {item.waitlistCount >= 5 && (
@@ -45,7 +49,7 @@ export default async function NotificationDashboard() {
 
             {/* PRODUCT HEADER */}
             <div className="flex gap-4 items-center mb-6">
-              <div className="h-20 w-20 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0 shadow-inner relative">
+              <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl md:rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0 shadow-inner relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.image || "/placeholder.png"}
@@ -54,7 +58,7 @@ export default async function NotificationDashboard() {
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-slate-900 truncate text-lg leading-tight" title={item.name}>
+                <h3 className="font-bold text-slate-900 truncate text-base md:text-lg leading-tight" title={item.name}>
                   {item.name}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
@@ -90,7 +94,6 @@ export default async function NotificationDashboard() {
                 </div>
               </div>
 
-              {/* THE FIX: REMOVED 'count' and 'hasStock' to satisfy the build error */}
               <WaitlistModal
                 productId={item.id}
                 productName={item.name}
@@ -101,12 +104,12 @@ export default async function NotificationDashboard() {
 
         {/* EMPTY STATE */}
         {summary.length === 0 && (
-          <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] bg-white">
-            <div className="bg-slate-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <PackageSearch className="h-10 w-10 text-slate-300" />
+          <div className="col-span-full py-16 md:py-24 text-center border-2 border-dashed border-slate-200 rounded-[2rem] md:rounded-[3rem] bg-white mx-4 md:mx-0">
+            <div className="bg-slate-50 h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PackageSearch className="h-8 w-8 md:h-10 md:w-10 text-slate-300" />
             </div>
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Active Waitlists</h3>
-            <p className="font-medium text-slate-400 text-sm mt-1">Customers haven't requested any out-of-stock items yet.</p>
+            <p className="font-medium text-slate-400 text-sm mt-1 px-4">Customers haven't requested any out-of-stock items yet.</p>
           </div>
         )}
       </div>

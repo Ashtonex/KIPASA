@@ -4,15 +4,15 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Button } from "@/components/ui/button"
 import {
     Menu,
-    LayoutDashboard,
-    ShoppingCart,
-    QrCode,
-    Users,
-    LayoutTemplate,
-    Bell,
-    Package,
-    Settings,
-    Zap
+    LayoutDashboard, // Overview
+    ShoppingCart,    // Orders
+    QrCode,          // QR Scanner
+    Users,           // Team & Customers
+    LayoutTemplate,  // Site Content
+    Bell,            // Waitlists
+    Package,         // Products
+    Settings,        // Settings
+    Zap              // Mara Go
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -22,6 +22,7 @@ export function MobileSidebar() {
     const pathname = usePathname()
     const [open, setOpen] = useState(false)
 
+    // Complete route list matching your Desktop Sidebar
     const routes = [
         { href: "/admin", label: "Overview", icon: LayoutDashboard },
         { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
@@ -43,30 +44,31 @@ export function MobileSidebar() {
                 </Button>
             </SheetTrigger>
 
+            {/* Side="left" makes it slide in from the left like a standard drawer */}
             <SheetContent side="left" className="p-0 w-[300px] bg-slate-900 border-r-slate-800 text-white overflow-y-auto">
+
                 {/* ACCESSIBILITY FIX: 
-            The SheetTitle is required by Radix UI. 
-            We use "sr-only" (screen-reader only) to hide it visually 
-            so it doesn't conflict with your custom header below.
-         */}
+                   Radix UI requires a Title for screen readers. 
+                   We hide it visually using "sr-only" to keep your design clean.
+                */}
                 <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
 
                 <div className="flex flex-col min-h-full p-6">
 
-                    {/* Your Custom Header */}
+                    {/* Branding Header */}
                     <div className="mb-8 pl-2">
                         <h1 className="text-2xl font-black uppercase tracking-tighter">
                             KIPASA <span className="text-blue-500">ADMIN</span>
                         </h1>
                     </div>
 
-                    {/* Links */}
+                    {/* Navigation Links */}
                     <div className="flex flex-col gap-2 pb-10">
                         {routes.map((route) => (
                             <Link
                                 key={route.href}
                                 href={route.href}
-                                onClick={() => setOpen(false)}
+                                onClick={() => setOpen(false)} // Closes the menu automatically when a link is clicked
                                 className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${pathname === route.href
                                     ? "bg-blue-600 text-white font-bold shadow-lg shadow-blue-900/20"
                                     : "text-slate-400 hover:bg-white/5 hover:text-white font-medium"

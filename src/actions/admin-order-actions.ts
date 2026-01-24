@@ -59,7 +59,7 @@ export async function updateOrderStatus(formData: FormData) {
 /**
  * ============================================================
  * CORE (DIRECT CALL)
- * Update Order Status via params (backward compatible)
+ * Update Order Status via params (Fixes "Expected 1 argument" error)
  * ============================================================
  */
 export async function updateOrderStatusDirect(
