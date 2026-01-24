@@ -73,7 +73,8 @@ export function MaraAnalytics({ intelligence, inputs }: { intelligence: any, inp
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    formatter={(value: number) => `$${value.toFixed(2)}`}
+                                    // FIXED: Use 'any' type to satisfy Recharts strict typing
+                                    formatter={(value: any) => `$${Number(value).toFixed(2)}`}
                                     contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                                 />
                                 <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
@@ -91,7 +92,8 @@ export function MaraAnalytics({ intelligence, inputs }: { intelligence: any, inp
                                 <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
                                 <YAxis fontSize={10} tickFormatter={(val) => `$${val}`} tickLine={false} axisLine={false} />
                                 <Tooltip
-                                    formatter={(value: number) => `$${value.toLocaleString()}`}
+                                    // FIXED: Use 'any' type here as well
+                                    formatter={(value: any) => `$${Number(value).toLocaleString()}`}
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                                 />
