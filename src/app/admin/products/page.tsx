@@ -72,8 +72,8 @@ export default async function AdminProductsPage() {
 
                 <td className="p-4">
                   <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${product.category
-                    ? 'bg-blue-50 text-blue-600 border-blue-100'
-                    : 'bg-amber-50 text-amber-600 border-amber-100 italic'
+                      ? 'bg-blue-50 text-blue-600 border-blue-100'
+                      : 'bg-amber-50 text-amber-600 border-amber-100 italic'
                     }`}>
                     {product.category || "Uncategorized"}
                   </span>
