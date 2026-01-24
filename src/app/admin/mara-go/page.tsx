@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Zap, Calculator, Trash2, Layers, Plus, TrendingUp, AlertTriangle, FileText, ArrowRight } from "lucide-react"
 import { MaraAnalytics } from "@/components/admin/MaraAnalytics"
-import { toast } from "sonner" // Import toast for notifications
+import { toast } from "sonner"
 
 export default function MaraPage() {
     const [valuations, setValuations] = useState<any[]>([])
@@ -18,7 +18,7 @@ export default function MaraPage() {
     const [inputs, setInputs] = useState({
         name: "",
         quantity: "100",
-        unitBuy: "5",
+        unitBuy: "5", // This was stuck because the input name didn't match
         sellPrice: "0"
     })
     const [extraCosts, setExtraCosts] = useState<{ name: string, value: string }[]>([])
@@ -53,7 +53,6 @@ export default function MaraPage() {
         setExtraCosts(newCosts)
     }
 
-    // --- FIX: Wrapper to handle Server Action return types ---
     const handleSubmit = async (formData: FormData) => {
         try {
             const result = await addMaraEntry(formData)
@@ -61,7 +60,6 @@ export default function MaraPage() {
                 toast.error(result.error)
             } else {
                 toast.success("Valuation Logged Successfully")
-                // Optional: Refresh local list or reset form here if desired
             }
         } catch (e) {
             toast.error("An unexpected error occurred")
@@ -92,7 +90,6 @@ export default function MaraPage() {
                             <h2 className="font-bold text-slate-900">Cost Injection (Absorption)</h2>
                         </div>
 
-                        {/* FIX: Use handleSubmit instead of addMaraEntry directly */}
                         <form action={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-2">
@@ -105,7 +102,16 @@ export default function MaraPage() {
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black uppercase text-slate-400">Unit Buy ($)</label>
-                                    <Input name="unit_buy_price" type="number" step="0.01" value={inputs.unitBuy} onChange={handleInputChange} required />
+                                    {/* FIXED: Changed name to 'unitBuy' so you can type, and added hidden input for server */}
+                                    <Input
+                                        name="unitBuy"
+                                        type="number"
+                                        step="0.01"
+                                        value={inputs.unitBuy}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                    <input type="hidden" name="unit_buy_price" value={inputs.unitBuy} />
                                 </div>
                             </div>
 
