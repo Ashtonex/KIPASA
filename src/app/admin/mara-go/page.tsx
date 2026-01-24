@@ -104,7 +104,7 @@ export default function MaraPage() {
 
                 {/* THE GREETING BOX */}
                 <div className="bg-white border-l-4 border-indigo-600 p-4 rounded-r-xl shadow-sm flex gap-4 items-start animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="bg-indigo-50 p-2 rounded-full mt-1">
+                    <div className="bg-indigo-50 p-2 rounded-full mt-1 shrink-0">
                         <ConciergeBell className="h-4 w-4 text-indigo-700" />
                     </div>
                     <div>
@@ -176,25 +176,25 @@ export default function MaraPage() {
                             <div className="space-y-4 pt-4 border-t border-slate-100">
                                 <label className="text-[10px] font-black uppercase text-slate-400">Set Selling Price ($)</label>
 
-                                {/* Suggestions Bar */}
-                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                {/* Suggestions Bar - MOBILE OPTIMIZED (Swipeable) */}
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                     <div
                                         onClick={() => setInputs(p => ({ ...p, sellPrice: intelligence.suggestions.breakEven.toFixed(2) }))}
-                                        className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg border border-slate-200 min-w-[100px] transition-all"
+                                        className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg border border-slate-200 min-w-[110px] shrink-0 transition-all"
                                     >
                                         <div className="text-[9px] font-black uppercase text-slate-400">Break Even</div>
                                         <div className="text-sm font-bold text-slate-700">${intelligence.suggestions.breakEven.toFixed(2)}</div>
                                     </div>
                                     <div
                                         onClick={() => setInputs(p => ({ ...p, sellPrice: intelligence.suggestions.conservative.toFixed(2) }))}
-                                        className="cursor-pointer bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg border border-blue-100 min-w-[100px] transition-all"
+                                        className="cursor-pointer bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg border border-blue-100 min-w-[110px] shrink-0 transition-all"
                                     >
                                         <div className="text-[9px] font-black uppercase text-blue-400">Standard (30%)</div>
                                         <div className="text-sm font-bold text-blue-700">${intelligence.suggestions.conservative.toFixed(2)}</div>
                                     </div>
                                     <div
                                         onClick={() => setInputs(p => ({ ...p, sellPrice: intelligence.suggestions.growth.toFixed(2) }))}
-                                        className="cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg border border-indigo-100 min-w-[100px] transition-all"
+                                        className="cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg border border-indigo-100 min-w-[110px] shrink-0 transition-all"
                                     >
                                         <div className="text-[9px] font-black uppercase text-indigo-400">Growth (50%)</div>
                                         <div className="text-sm font-bold text-indigo-700">${intelligence.suggestions.growth.toFixed(2)}</div>
@@ -224,7 +224,7 @@ export default function MaraPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 font-bold uppercase tracking-widest text-xs h-14 rounded-xl">
+                            <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 font-bold uppercase tracking-widest text-xs h-14 rounded-xl shadow-xl shadow-slate-200/50">
                                 Commit to Ledger
                             </Button>
                         </form>
@@ -234,7 +234,6 @@ export default function MaraPage() {
                 {/* === RIGHT COLUMN: ANALYTICS & STATEMENTS === */}
                 <div className="lg:col-span-5 space-y-6">
 
-                    {/* VISUAL ANALYTICS */}
                     <MaraAnalytics intelligence={intelligence} inputs={inputs} />
 
                     {/* Pro Forma Statement */}
@@ -277,18 +276,26 @@ export default function MaraPage() {
                 </div>
             </div>
 
-            {/* --- EXISTING ENTRIES LIST --- */}
+            {/* --- EXISTING ENTRIES LIST (Mobile Optimized) --- */}
             <div className="pt-10 border-t border-slate-200 print:hidden">
                 <h3 className="text-lg font-black uppercase text-slate-900 mb-6">Valuation Ledger</h3>
                 <div className="space-y-4">
                     {valuations.map((item: any) => (
-                        <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
-                            <div>
-                                <div className="font-bold text-slate-900">{item.item_name}</div>
-                                <div className="text-xs text-slate-500">Qty: {item.quantity} • Buy: ${item.unit_buy_price} • Target: ${item.target_sell_price}</div>
+                        <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center gap-4">
+
+                            {/* MOBILE FIX: 'min-w-0 flex-1' allows text to truncate if too long, saving the layout */}
+                            <div className="min-w-0 flex-1">
+                                <div className="font-bold text-slate-900 truncate">{item.item_name}</div>
+                                <div className="text-xs text-slate-500 font-mono">
+                                    Qty: {item.quantity} • Buy: ${item.unit_buy_price}
+                                </div>
                             </div>
-                            <form action={deleteMaraEntry.bind(null, item.id)}>
-                                <Button variant="ghost" size="icon" className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+
+                            {/* MOBILE FIX: 'shrink-0' ensures button never gets squashed */}
+                            <form action={deleteMaraEntry.bind(null, item.id)} className="shrink-0">
+                                <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50">
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </form>
                         </div>
                     ))}
