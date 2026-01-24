@@ -7,18 +7,20 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Zap, Calculator, Trash2, Layers, Plus, TrendingUp, AlertTriangle, FileText, ArrowRight } from "lucide-react"
+import { Zap, Calculator, Trash2, Layers, AlertTriangle, FileText, ConciergeBell } from "lucide-react"
 import { MaraAnalytics } from "@/components/admin/MaraAnalytics"
 import { toast } from "sonner"
 
 export default function MaraPage() {
     const [valuations, setValuations] = useState<any[]>([])
+    const [userName, setUserName] = useState<string>("")
+    const [greeting, setGreeting] = useState<string>("")
 
     // --- FORM STATE ---
     const [inputs, setInputs] = useState({
         name: "",
         quantity: "100",
-        unitBuy: "5", // This was stuck because the input name didn't match
+        unitBuy: "5",
         sellPrice: "0"
     })
     const [extraCosts, setExtraCosts] = useState<{ name: string, value: string }[]>([])
@@ -32,12 +34,31 @@ export default function MaraPage() {
     )
 
     useEffect(() => {
-        const fetch = async () => {
+        const initData = async () => {
             const supabase = createClient()
+
+            // 1. Fetch User
+            const { data: { user } } = await supabase.auth.getUser()
+            const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Director"
+            const politeName = name.charAt(0).toUpperCase() + name.slice(1)
+            setUserName(politeName)
+
+            // 2. Fetch Valuations
             const { data } = await supabase.from("mara_valuations").select("*").order("created_at", { ascending: false })
-            if (data) setValuations(data)
+
+            if (data) {
+                setValuations(data)
+
+                // 3. Generate Charon's Greeting
+                if (data.length > 0) {
+                    const lastItem = data[0].item_name
+                    setGreeting(`It is a pleasure to see you again, Mr. ${politeName}. I recall our last assessment of the "${lastItem}" was... enlightening. Shall we attend to the new inventory?`)
+                } else {
+                    setGreeting(`Greetings, Mr. ${politeName}. Welcome to the Continental's valuation services. I am at your disposal for your first assessment.`)
+                }
+            }
         }
-        fetch()
+        initData()
     }, [])
 
     const handleInputChange = (e: any) => {
@@ -59,24 +80,41 @@ export default function MaraPage() {
             if (result?.error) {
                 toast.error(result.error)
             } else {
-                toast.success("Valuation Logged Successfully")
+                toast.success("The ledger has been updated, sir.")
             }
         } catch (e) {
-            toast.error("An unexpected error occurred")
+            toast.error("An unfortunate error occurred.")
         }
     }
 
     return (
         <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 space-y-8 print:bg-white print:p-0">
 
-            {/* HEADER (Hidden when printing) */}
-            <div className="flex items-center gap-3 print:hidden">
-                <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                    <Zap className="h-6 w-6 text-white" />
+            {/* HEADER: Charon's Greeting */}
+            <div className="space-y-4 print:hidden">
+                <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-300">
+                        <Zap className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Mara Intelligence</h1>
+                        <p className="text-slate-500 font-medium text-xs">Financial Modeling & Valuation Engine</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Mara Intelligence</h1>
-                    <p className="text-slate-500 font-medium text-xs">Financial Modeling & Valuation Engine</p>
+
+                {/* THE GREETING BOX */}
+                <div className="bg-white border-l-4 border-indigo-600 p-4 rounded-r-xl shadow-sm flex gap-4 items-start animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="bg-indigo-50 p-2 rounded-full mt-1">
+                        <ConciergeBell className="h-4 w-4 text-indigo-700" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-serif italic text-slate-700 leading-relaxed">
+                            "{greeting || "Loading protocols..."}"
+                        </p>
+                        <p className="text-[10px] font-black uppercase text-indigo-400 mt-2 tracking-widest">
+                            - Mara System Concierge
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -102,7 +140,6 @@ export default function MaraPage() {
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black uppercase text-slate-400">Unit Buy ($)</label>
-                                    {/* FIXED: Changed name to 'unitBuy' so you can type, and added hidden input for server */}
                                     <Input
                                         name="unitBuy"
                                         type="number"
@@ -176,7 +213,6 @@ export default function MaraPage() {
                                     required
                                 />
 
-                                {/* Hidden input for server action */}
                                 <input type="hidden" name="target_sell_price" value={inputs.sellPrice} />
 
                                 <div className={`text-xs font-bold flex items-center gap-2 ${intelligence.insight.status === 'critical' ? 'text-red-600' :
@@ -238,33 +274,10 @@ export default function MaraPage() {
                         </div>
                     </div>
 
-                    {/* Balance Sheet Impact (Hidden on Print) */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 print:hidden">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" /> Balance Sheet Impact
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="font-medium text-slate-600">Inventory Assets (Current)</span>
-                                <span className="font-bold text-slate-900 flex items-center gap-1">
-                                    <ArrowRight className="w-3 h-3 text-green-500" />
-                                    Increase by ${intelligence.totalBatchCost.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="font-medium text-slate-600">Cash / Payable</span>
-                                <span className="font-bold text-slate-900 flex items-center gap-1">
-                                    <ArrowRight className="w-3 h-3 text-red-500" />
-                                    Decrease by ${intelligence.totalBatchCost.toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
 
-            {/* --- EXISTING ENTRIES LIST (Hidden on Print) --- */}
+            {/* --- EXISTING ENTRIES LIST --- */}
             <div className="pt-10 border-t border-slate-200 print:hidden">
                 <h3 className="text-lg font-black uppercase text-slate-900 mb-6">Valuation Ledger</h3>
                 <div className="space-y-4">
