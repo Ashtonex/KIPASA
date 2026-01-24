@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Zap, Calculator, Trash2, Layers, Plus, TrendingUp, AlertTriangle, FileText, ArrowRight } from "lucide-react"
 import { MaraAnalytics } from "@/components/admin/MaraAnalytics"
+import { toast } from "sonner" // Import toast for notifications
 
 export default function MaraPage() {
     const [valuations, setValuations] = useState<any[]>([])
@@ -52,6 +53,21 @@ export default function MaraPage() {
         setExtraCosts(newCosts)
     }
 
+    // --- FIX: Wrapper to handle Server Action return types ---
+    const handleSubmit = async (formData: FormData) => {
+        try {
+            const result = await addMaraEntry(formData)
+            if (result?.error) {
+                toast.error(result.error)
+            } else {
+                toast.success("Valuation Logged Successfully")
+                // Optional: Refresh local list or reset form here if desired
+            }
+        } catch (e) {
+            toast.error("An unexpected error occurred")
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 space-y-8 print:bg-white print:p-0">
 
@@ -76,7 +92,8 @@ export default function MaraPage() {
                             <h2 className="font-bold text-slate-900">Cost Injection (Absorption)</h2>
                         </div>
 
-                        <form action={addMaraEntry} className="space-y-6">
+                        {/* FIX: Use handleSubmit instead of addMaraEntry directly */}
+                        <form action={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400">Product Name</label>
@@ -175,7 +192,7 @@ export default function MaraPage() {
                 {/* === RIGHT COLUMN: ANALYTICS & STATEMENTS === */}
                 <div className="lg:col-span-5 space-y-6">
 
-                    {/* NEW: VISUAL ANALYTICS */}
+                    {/* VISUAL ANALYTICS */}
                     <MaraAnalytics intelligence={intelligence} inputs={inputs} />
 
                     {/* Pro Forma Statement */}
@@ -215,7 +232,7 @@ export default function MaraPage() {
                         </div>
                     </div>
 
-                    {/* Balance Sheet Impact (Hidden on Print usually, but kept for value) */}
+                    {/* Balance Sheet Impact (Hidden on Print) */}
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 print:hidden">
                         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
                             <TrendingUp className="w-4 h-4" /> Balance Sheet Impact
