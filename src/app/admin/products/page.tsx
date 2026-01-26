@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Megaphone, Package, FolderOpen, LayoutGrid, Tag } from "lucide-react"
+import { Plus, Pencil, Trash2, Megaphone, Package, FolderOpen, LayoutGrid, Upload } from "lucide-react"
 import { deleteProduct } from "@/actions/admin-products-actions"
 import { PromoToggles } from "@/components/admin/PromoToggles"
 
@@ -22,14 +22,22 @@ export default async function AdminProductsPage() {
           <p className="text-gray-500 text-sm md:hidden mt-1">Manage inventory, prices, and promotions.</p>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
-          {/* NEW: Link to Category Management */}
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          {/* 1. Manage Categories Button */}
           <Button variant="outline" asChild className="flex-1 md:flex-none rounded-xl border-gray-200">
             <Link href="/admin/categories">
               <LayoutGrid className="mr-2 h-4 w-4" /> <span className="hidden md:inline">Manage </span>Cats
             </Link>
           </Button>
 
+          {/* 2. NEW: Bulk Import Button */}
+          <Button variant="outline" asChild className="flex-1 md:flex-none rounded-xl border-gray-200">
+            <Link href="/admin/products/import">
+              <Upload className="mr-2 h-4 w-4" /> <span className="hidden md:inline">Bulk </span>Import
+            </Link>
+          </Button>
+
+          {/* 3. Add Product Button (Primary) */}
           <Button asChild className="flex-[2] md:flex-none rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-95">
             <Link href="/admin/products/new">
               <Plus className="mr-2 h-4 w-4" /> Add Product
