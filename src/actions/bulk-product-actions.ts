@@ -9,22 +9,33 @@ export type BulkProduct = {
   price: number
   stock: number
   category: string
-  image_url: string // We will accept a URL here
+  image_url: string
+}
+
+// Helper function to create a slug
+function generateSlug(name: string) {
+  const baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') 
+    .replace(/^-+|-+$/g, '')
+  
+  const uniqueSuffix = Math.random().toString(36).substring(2, 6)
+  return `${baseSlug}-${uniqueSuffix}`
 }
 
 export async function importBulkProducts(products: BulkProduct[]) {
   const supabase = await createClient()
   
   // 1. Format data for Supabase
-  // We map the incoming CSV data to your DB structure
   const formattedData = products.map(p => ({
     name: p.name,
+    slug: generateSlug(p.name), 
     description: p.description || "",
     price: p.price,
     stock: p.stock,
     category: p.category || "Uncategorized",
-    // If an image URL is provided, put it in the images array
-    images: p.image_url ? [p.image_url] : [],
+    images: p.image_url ? [p.image_url] : []
+    // REMOVED: is_active (This was causing the crash)
   }))
 
   // 2. Perform Bulk Insert
