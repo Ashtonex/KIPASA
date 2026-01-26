@@ -25,7 +25,6 @@ export async function importBulkProducts(products: BulkProduct[]) {
     category: p.category || "Uncategorized",
     // If an image URL is provided, put it in the images array
     images: p.image_url ? [p.image_url] : [],
-    is_active: true
   }))
 
   // 2. Perform Bulk Insert
