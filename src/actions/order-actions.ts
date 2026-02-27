@@ -121,7 +121,12 @@ export async function placeOrder(input: OrderInput) {
       email: input.email,
       phone: input.phone,
       address: `${input.address}, ${input.suburb}, ${input.city}`,
-      items: orderItemsData.map(i => ({ name: i.name || "Product", quantity: i.quantity, price: i.unit_price })),
+      items: orderItemsData.map(i => ({
+        id: i.product_id, // Pass product ID for QR code
+        name: i.name || "Product",
+        quantity: i.quantity,
+        price: i.unit_price
+      })),
       total: totalAmount,
       paymentMethod: input.paymentMethod,
     })
