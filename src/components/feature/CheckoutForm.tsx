@@ -2,7 +2,6 @@
 
 import { useCart } from "@/context/CartContext"
 import { placeOrder } from "@/actions/order-actions"
-import { initiatePayment } from "@/actions/payment-actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
 // Added Activity to the imports to fix your Runtime Error
-import { Loader2, AlertCircle, CreditCard, Wallet, Landmark, Info, Banknote, Activity } from "lucide-react"
+import { Loader2, AlertCircle, Wallet, Landmark, Info, Banknote, Activity } from "lucide-react"
 
 type ShippingMethod = {
   id: number
@@ -24,10 +23,11 @@ type ShippingMethod = {
 export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMethod[] }) {
   const router = useRouter()
   const { items, cartTotal } = useCart()
-  
+
   // State Management
   const [selectedMethod, setSelectedMethod] = useState<string>(shippingMethods[0]?.id.toString())
-  const [paymentMethod, setPaymentMethod] = useState<string>("mobile") 
+  const [paymentMethod, setPaymentMethod] = useState<string>("ecocash")
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [phoneError, setPhoneError] = useState<string | null>(null)
 
@@ -52,8 +52,8 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
       const phone = formData.get("phone") as string
       const email = formData.get("email") as string
 
-      // 1. Validate Phone if Mobile Payment is selected
-      if (paymentMethod === "mobile" && !validateZimPhone(phone)) {
+      // 1. Validate Phone if EcoCash is selected
+      if (paymentMethod === "ecocash" && !validateZimPhone(phone)) {
         setPhoneError("Invalid EcoCash/OneMoney number. Use 077... or +263...")
         setIsSubmitting(false)
         return
@@ -69,7 +69,7 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
         city: formData.get("city") as string,
         suburb: formData.get("suburb") as string,
         shippingMethodId: Number(selectedMethod),
-        paymentMethod: paymentMethod, 
+        paymentMethod: paymentMethod,
         cartItems: items.map((item) => ({
           id: item.id,
           quantity: item.quantity,
@@ -77,30 +77,38 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
       })
 
       if (result.success && result.orderId) {
-        // 3. Handle Logic based on Payment Method
-        if (paymentMethod === "cod") {
-          localStorage.removeItem("cart")
-          router.push(`/checkout/success?orderId=${result.orderId}&method=cod`)
-        } else {
-          const paymentResult = await initiatePayment(
-            result.orderId, 
-            email, 
-            paymentMethod, 
-            phone
-          )
+        // Construct WhatsApp Message
+        const orderIdShort = result.orderId.slice(0, 8);
+        const storeContact = "+263772368435";
+        const details = result.orderDetails;
 
-          if (paymentResult.success) {
-            localStorage.removeItem("cart")
-            if (paymentMethod === "mobile") {
-               router.push(`/checkout/pending?orderId=${result.orderId}`)
-            } else if (paymentResult.redirectUrl) {
-               window.location.href = paymentResult.redirectUrl
-            }
-          } else {
-            alert("Payment could not be started: " + (paymentResult.error || "Unknown error"))
-          }
-        }
+        let message = `*NEW ORDER FROM KIPASA STORE*\n\n`;
+        message += `*Order ID:* #${orderIdShort}\n`;
+        message += `*Customer:* ${details?.customerName}\n`;
+        message += `*Method:* ${paymentMethod.toUpperCase()}\n`;
+        message += `*Shipping:* ${details?.shippingMethod}\n\n`;
+        message += `*Items:*\n`;
+
+        details?.items.forEach((item: any) => {
+          message += `- ${item.name} x${item.quantity} ($${(item.price * item.quantity).toFixed(2)})\n`;
+        });
+
+        message += `\n*TOTAL DUE: $${details?.total.toFixed(2)}*\n\n`;
+        message += `Please confirm receipt of this order.`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${storeContact}?text=${encodedMessage}`;
+
+        // Clear Cart
+        localStorage.removeItem("cart");
+
+        // Open WhatsApp in new tab
+        window.open(whatsappUrl, "_blank");
+
+        // Redirect to success page
+        router.push(`/checkout/success?orderId=${result.orderId}&method=${paymentMethod}`);
       }
+
     } catch (error) {
       console.error(error)
       alert("Something went wrong. Please check your connection and try again.")
@@ -120,7 +128,7 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-2">
-      
+
       {/* LEFT COLUMN: Customer & Shipping Details */}
       <div className="space-y-6">
         <Card className="rounded-[2rem] border-none shadow-sm bg-white">
@@ -144,12 +152,12 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone" className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Phone (Required for Mobile/COD)</Label>
-              <Input 
-                id="phone" 
-                name="phone" 
-                type="tel" 
-                placeholder="077..." 
-                required 
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="077..."
+                required
                 className={`rounded-xl border-slate-100 bg-slate-50/50 ${phoneError ? "border-red-500 ring-1 ring-red-500" : ""}`}
                 onChange={() => setPhoneError(null)}
               />
@@ -168,26 +176,15 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
             <CardTitle className="text-lg font-black uppercase tracking-widest text-white">Payment Protocol</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-3 gap-3">
+            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4">
               <div>
-                <RadioGroupItem value="mobile" id="mobile" className="peer sr-only" />
+                <RadioGroupItem value="ecocash" id="ecocash" className="peer sr-only" />
                 <Label
-                  htmlFor="mobile"
-                  className="flex flex-col items-center justify-between rounded-2xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 cursor-pointer transition-all h-full"
+                  htmlFor="ecocash"
+                  className="flex flex-col items-center justify-between rounded-2xl border-2 border-slate-100 bg-white p-6 hover:bg-slate-50 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 cursor-pointer transition-all h-full"
                 >
-                  <Wallet className="mb-2 h-6 w-6 text-green-600" />
-                  <span className="text-[9px] font-black uppercase text-center tracking-tighter">Mobile Money</span>
-                </Label>
-              </div>
-
-              <div>
-                <RadioGroupItem value="card" id="card" className="peer sr-only" />
-                <Label
-                  htmlFor="card"
-                  className="flex flex-col items-center justify-between rounded-2xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 cursor-pointer transition-all h-full"
-                >
-                  <CreditCard className="mb-2 h-6 w-6 text-blue-600" />
-                  <span className="text-[9px] font-black uppercase text-center tracking-tighter">Card Gateway</span>
+                  <Wallet className="mb-2 h-8 w-8 text-green-600" />
+                  <span className="text-xs font-black uppercase text-center tracking-tight">EcoCash / OneMoney</span>
                 </Label>
               </div>
 
@@ -195,31 +192,20 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
                 <RadioGroupItem value="cod" id="cod" className="peer sr-only" />
                 <Label
                   htmlFor="cod"
-                  className="flex flex-col items-center justify-between rounded-2xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 cursor-pointer transition-all h-full"
+                  className="flex flex-col items-center justify-between rounded-2xl border-2 border-slate-100 bg-white p-6 hover:bg-slate-50 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 cursor-pointer transition-all h-full"
                 >
-                  <Banknote className="mb-2 h-6 w-6 text-orange-600" />
-                  <span className="text-[9px] font-black uppercase text-center tracking-tighter">Cash On Delivery</span>
+                  <Banknote className="mb-2 h-8 w-8 text-orange-600" />
+                  <span className="text-xs font-black uppercase text-center tracking-tight">Cash on Delivery / Pickup</span>
                 </Label>
               </div>
             </RadioGroup>
 
-            {paymentMethod === "cod" && (
-              <div className="mt-4 p-4 bg-orange-50 rounded-2xl flex gap-3 items-start border border-orange-100 animate-in fade-in slide-in-from-top-2">
-                <Info className="h-4 w-4 text-orange-600 mt-0.5" />
-                <p className="text-[10px] text-orange-800 leading-relaxed font-bold uppercase tracking-tighter">
-                  Order processed immediately. Ensure <b>USD</b> cash is available for the logistics partner.
-                </p>
-              </div>
-            )}
-
-            {paymentMethod === "card" && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-2xl flex gap-3 items-start border border-blue-100 animate-in fade-in slide-in-from-top-2">
-                <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                <p className="text-[10px] text-blue-800 leading-relaxed font-bold uppercase tracking-tighter">
-                  Secure redirect to Paynow. Transmission is encrypted; no card data is retained locally.
-                </p>
-              </div>
-            )}
+            <div className="mt-6 p-4 bg-blue-50 rounded-2xl flex gap-3 items-start border border-blue-100">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+              <p className="text-[11px] text-blue-800 leading-relaxed font-bold uppercase tracking-tight">
+                Upon execution, you will be redirected to WhatsApp to confirm your order details. An email will also be sent to our team for processing.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -261,7 +247,7 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t border-slate-100 pt-4 space-y-3">
               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Logistics Priority</Label>
               <RadioGroup value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-2">
@@ -295,11 +281,10 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
               </div>
             </div>
 
-            <Button 
-              className={`w-full h-16 text-lg font-black rounded-2xl shadow-xl transition-all transform active:scale-[0.98] ${
-                paymentMethod === 'cod' ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-100' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100'
-              }`}
-              type="submit" 
+            <Button
+              className={`w-full h-16 text-lg font-black rounded-2xl shadow-xl transition-all transform active:scale-[0.98] ${paymentMethod === 'cod' ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-100' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100'
+                }`}
+              type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -307,12 +292,11 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
               ) : (
                 <Activity className="mr-2 h-6 w-6" /> // This is now defined
               )}
-              {isSubmitting ? "PROCESSING_NODE..." : paymentMethod === 'cod' ? "INITIALIZE COD ORDER" : "EXECUTE PAYMENT"}
+              {isSubmitting ? "PROCESSING_NODE..." : "CONFIRM ORDER & CALL WHATSAPP"}
             </Button>
-            
+
             <div className="flex items-center justify-center gap-3 mt-4 opacity-30">
-                <img src="/paynow-badge.png" alt="Paynow" className="h-5 grayscale" />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Encrypted_Payload</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Direct Delivery Protocol</span>
             </div>
           </CardContent>
         </Card>
