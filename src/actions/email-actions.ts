@@ -103,6 +103,8 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     const results = await Promise.all(sendPromises);
     const success = results.some(r => !r.error);
 
+    console.log("Admin Email Dispatch Results:", results.map((r, i) => ({ email: recipients[i], error: r.error })));
+
     if (!success) {
       console.error("All email attempts failed:", results.map(r => r.error));
       return { success: false, error: results[0].error };
@@ -111,6 +113,40 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     return { success: true };
   } catch (err: any) {
     console.error("Email send exception:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function sendDiagnosticPulse() {
+  const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
+  const timestamp = new Date().toLocaleString();
+
+  console.log(`[DIAGNOSTIC] Starting Pulse sending to ${recipients.join(', ')}...`);
+
+  try {
+    const promises = recipients.map(recipient =>
+      resend.emails.send({
+        from: 'Kipasa Store <david@kipasastore.com>',
+        to: recipient,
+        subject: `System Pulse: Kipasa Store Domain Verifier [${timestamp}]`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px;">
+            <h1>Digital Transmission Pulse</h1>
+            <p>This is a diagnostic email to verify that your domain <strong>kipasastore.com</strong> is correctly delivering via Resend.</p>
+            <hr/>
+            <p><strong>Relay Status:</strong> Testing Individual Dispatches</p>
+            <p><strong>Timestamp:</strong> ${timestamp}</p>
+            <p>If you receive this, the relay connection is <strong>SUCCESSFUL</strong>.</p>
+          </div>
+        `
+      })
+    );
+
+    const results = await Promise.all(promises);
+    console.log("[DIAGNOSTIC] Results:", results);
+    return { success: results.some(r => !r.error), details: results };
+  } catch (err: any) {
+    console.error("[DIAGNOSTIC] CRITICAL FAILURE:", err.message);
     return { success: false, error: err.message };
   }
 }

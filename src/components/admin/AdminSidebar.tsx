@@ -13,13 +13,15 @@ import {
   UserCheck,
   LayoutTemplate,
   Bell, // Added for Waitlist management
-  Brain
+  Brain,
+  Wrench
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/charon", label: "Charon", icon: Brain },
+  { href: "/admin/system", label: "System", icon: Wrench },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/staff/scanner", label: "QR Scanner", icon: Camera },
   { href: "/admin/staff", label: "Team Management", icon: UserCheck },

@@ -12,7 +12,8 @@ import {
     Bell,            // Waitlists
     Package,         // Products
     Settings,        // Settings
-    Brain             // Charon
+    Brain,             // Charon
+    Wrench
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -34,6 +35,7 @@ export function MobileSidebar() {
         { href: "/admin/customers", label: "Customers", icon: Users },
         { href: "/admin/settings", label: "Settings", icon: Settings },
         { href: "/admin/charon", label: "Charon", icon: Brain },
+        { href: "/admin/system", label: "System", icon: Wrench },
     ]
 
     return (
