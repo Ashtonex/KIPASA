@@ -22,7 +22,7 @@ type ShippingMethod = {
 
 export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMethod[] }) {
   const router = useRouter()
-  const { items, cartTotal } = useCart()
+  const { items, cartTotal, clearCart } = useCart()
 
   // State Management
   const [selectedMethod, setSelectedMethod] = useState<string>(shippingMethods[0]?.id.toString())
@@ -99,8 +99,8 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${storeContact}?text=${encodedMessage}`;
 
-        // Clear Cart
-        localStorage.removeItem("cart");
+        // Clear Cart (Reactive)
+        clearCart();
 
         // Open WhatsApp in new tab
         window.open(whatsappUrl, "_blank");

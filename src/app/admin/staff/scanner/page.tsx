@@ -91,15 +91,22 @@ export default function StaffScannerPage() {
 
       function onScanSuccess(decodedText: string) {
         let finalId = decodedText
-        try {
-          if (decodedText.includes("orderId=")) {
+
+        // Handle new granular format (orderId:itemId)
+        if (decodedText.includes(":")) {
+          finalId = decodedText.split(":")[0];
+        }
+        // Handle legacy URL format
+        else if (decodedText.includes("orderId=")) {
+          try {
             const url = new URL(decodedText)
             const idFromUrl = url.searchParams.get("orderId")
             if (idFromUrl) finalId = idFromUrl
+          } catch (e) {
+            // invalid url, ignore
           }
-        } catch (e) {
-          // invalid url, ignore
         }
+
         processOrder(finalId, 'camera')
       }
 

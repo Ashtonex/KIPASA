@@ -113,6 +113,19 @@ export async function placeOrder(input: OrderInput) {
     throw new Error("Order created, but failed to save items.")
   }
 
+  // 7.5 REDUCE STOCK (NEW: Inventory Refinement Protocol)
+  try {
+    for (const item of itemsToInsert) {
+      const { error: stockError } = await supabase.rpc('decrement_product_stock', {
+        prod_id: item.product_id,
+        qty: item.quantity
+      });
+      if (stockError) console.error(`Stock reduction error for ${item.product_id}:`, stockError);
+    }
+  } catch (err) {
+    console.error("Stock management failure:", err);
+  }
+
   // 8. Send Email Notifications
   const emailProps = {
     orderId: order.id,
@@ -164,10 +177,13 @@ export async function placeOrder(input: OrderInput) {
 export async function updateOrderPaymentCode(orderId: string, confirmationCode: string) {
   const supabase = await createClient();
 
-  // 1. Update DB
+  // 1. Update DB & Transition Status to Processing
   const { data: order, error } = await supabase
     .from("orders")
-    .update({ payment_conf_code: confirmationCode })
+    .update({
+      payment_conf_code: confirmationCode,
+      status: "processing" // NEW: Market Protocol
+    })
     .eq("id", orderId)
     .select("*, order_items(*, products(name))")
     .single();

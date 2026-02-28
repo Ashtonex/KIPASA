@@ -105,7 +105,7 @@ export async function confirmCashPayment(orderId: string) {
   const { error } = await supabase
     .from("orders")
     .update({
-      status: "paid",
+      status: "delivered",
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)

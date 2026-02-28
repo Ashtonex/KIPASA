@@ -10,7 +10,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendReceiptEmail(email: string, orderId: string, amount: number) {
   try {
     await resend.emails.send({
-      from: 'Kipasa Store <orders@yourdomain.com>',
+      from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
       subject: `Receipt for Order #${orderId.slice(0, 8).toUpperCase()}`,
       html: `
@@ -40,7 +40,7 @@ export async function sendReceiptEmail(email: string, orderId: string, amount: n
 export async function sendOrderConfirmation(email: string, orderId: string, totalAmount: number) {
   try {
     await resend.emails.send({
-      from: 'Kipasa Store <orders@yourdomain.com>',
+      from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
       subject: `Order Confirmed - Kipasa Store #${orderId.slice(0, 8)}`,
       html: `
@@ -76,7 +76,7 @@ export async function sendOrderConfirmation(email: string, orderId: string, tota
 export async function sendShippingEmail(email: string, orderId: string, trackingNumber?: string) {
   try {
     await resend.emails.send({
-      from: 'Kipasa Store <orders@yourdomain.com>',
+      from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
       subject: `Your Kipasa Order #${orderId.slice(0, 8)} has Shipped!`,
       html: `
@@ -114,7 +114,7 @@ export async function sendShippingEmail(email: string, orderId: string, tracking
 export async function sendReadyForPickupEmail(email: string, orderId: string, firstName: string) {
   try {
     await resend.emails.send({
-      from: 'Kipasa Store <orders@yourdomain.com>',
+      from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
       subject: "Ready for Collection! 📍 Kipasa Store Mutare",
       html: `
@@ -159,7 +159,7 @@ export async function sendAbandonedCartEmail(email: string, firstName: string, c
   try {
     const itemsHtml = cartItems.map(item => `<li>${item.name} (Qty: ${item.quantity})</li>`).join('');
     await resend.emails.send({
-      from: 'Kipasa Store <orders@yourdomain.com>',
+      from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
       subject: "You left something behind! 🛒",
       html: `
