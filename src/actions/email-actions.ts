@@ -55,49 +55,68 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     const { orderId, customerName, email, phone, address, items, total, paymentMethod, confirmationCode } = data;
     const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
     const timestamp = new Date().toLocaleString();
+    const orderRef = orderId.slice(0, 8);
 
-    console.log(`[ORDER-RELAY] Starting Redundant Dispatch for Order #${orderId} at ${timestamp}...`);
+    console.log(`[GHOST-DISPATCH] Initiating 3-Phase Delivery for Order #${orderId}...`);
 
-    // Send separate emails to each admin using the "Pulse" structure (High Deliverability)
-    const sendPromises = recipients.map(recipient =>
-      resend.emails.send({
+    const results = [];
+
+    // Staggered Delivery Loop (1s delay between sends to bypass domain burst filters)
+    for (const [index, recipient] of recipients.entries()) {
+      // Add artificial stagger
+      if (index > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      const uniqueHash = Math.random().toString(36).substring(7);
+      const subject = `CRITICAL ORDER ALERT: #${orderRef} [${timestamp}] - [${uniqueHash}]`;
+
+      const res = await resend.emails.send({
         from: 'Kipasa Store <david@kipasastore.com>',
         to: recipient,
-        subject: `NEW ORDER ALERT: #${orderId.slice(0, 8)} [${timestamp}]`,
+        replyTo: 'david@kipasastore.com',
+        subject: subject,
+        // High-Reliability Plain Text Fallback
+        text: `
+NEW ORDER ALERT: #${orderId}
+Customer: ${customerName}
+Payment: ${paymentMethod.toUpperCase()}
+Total: $${total.toFixed(2)}
+Time: ${timestamp}
+
+Check your Admin Dashboard at ${process.env.NEXT_PUBLIC_SITE_URL}/admin/orders for full details.
+        `,
         html: `
           <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px; max-width: 600px; margin: auto;">
-            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Order Received</h1>
-            <p><strong>Order ID:</strong> #${orderId}</p>
+            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">New Order Alert</h1>
+            <p style="font-size: 18px;"><strong>Ref:</strong> #${orderId}</p>
             <p><strong>Customer:</strong> ${customerName}</p>
             <p><strong>Payment:</strong> ${paymentMethod.toUpperCase()}</p>
-            <p><strong>Total:</strong> $${total.toFixed(2)}</p>
+            <p><strong>Total Due:</strong> $${total.toFixed(2)}</p>
             ${confirmationCode ? `<p><strong>Verify Code:</strong> ${confirmationCode}</p>` : ''}
             
             <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px;">
-               <p style="margin: 0; font-weight: bold;">Brief Checklist:</p>
+               <p style="margin: 0; font-weight: bold;">Order Items:</p>
                <ul style="margin-top: 5px; font-size: 14px;">
                  ${items.map(i => `<li>${i.name} x${i.quantity}</li>`).join('')}
                </ul>
             </div>
 
-            <p style="font-size: 11px; color: #666; margin-top: 20px;">
-              System generated at ${timestamp}. Check Admin Dashboard for full fulfillment.
+            <p style="font-size: 11px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+              System Transmission ID: ${uniqueHash} | ${timestamp}
             </p>
           </div>
         `,
-      })
-    );
+      });
 
-    const results = await Promise.all(sendPromises);
+      results.push(res);
 
-    // EXPLICIT LOGGING FOR USER DEBUGGING
-    results.forEach((r, i) => {
-      if (r.error) {
-        console.error(`[RELAY-ERROR] ${recipients[i]}:`, r.error);
+      if (res.error) {
+        console.error(`[GHOST-PHASE-${index + 1} FAIL] ${recipient}:`, res.error);
       } else {
-        console.log(`[RELAY-SUCCESS] ${recipients[i]}: ID ${r.data?.id}`);
+        console.log(`[GHOST-PHASE-${index + 1} OK] ${recipient}: ID ${res.data?.id}`);
       }
-    });
+    }
 
     const success = results.some(r => !r.error);
     if (!success) return { success: false, error: results[0].error };
