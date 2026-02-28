@@ -146,8 +146,11 @@ export async function placeOrder(input: OrderInput) {
   try {
     // Notify ADMIN
     await sendOrderEmail(emailProps);
-    // Notify CUSTOMER
-    await sendCustomerOrderEmail(emailProps);
+
+    // Notify CUSTOMER (ONLY if not EcoCash - EcoCash gets it after verification)
+    if (input.paymentMethod !== "ecocash") {
+      await sendCustomerOrderEmail(emailProps);
+    }
 
     // 9. AWARD LOYALTY POINTS (NEW: Market Dominance Protocol)
     if (user) {
@@ -193,9 +196,9 @@ export async function updateOrderPaymentCode(orderId: string, confirmationCode: 
     return { success: false, error: error.message };
   }
 
-  // 2. Re-send ADMIN notification with the code
+  // 2. Re-send ADMIN notification with the code & Notify CUSTOMER of Verification
   try {
-    await sendOrderEmail({
+    const emailProps = {
       orderId: order.id,
       customerName: `${order.first_name} ${order.last_name}`,
       email: order.contact_email,
@@ -210,7 +213,13 @@ export async function updateOrderPaymentCode(orderId: string, confirmationCode: 
       total: order.total_amount,
       paymentMethod: order.payment_method,
       confirmationCode: confirmationCode
-    });
+    };
+
+    // Re-notify ADMIN
+    await sendOrderEmail(emailProps);
+
+    // Notify CUSTOMER (Verification Successful)
+    await sendCustomerOrderEmail(emailProps);
   } catch (emailErr) {
     console.error("Re-notification error:", emailErr);
   }

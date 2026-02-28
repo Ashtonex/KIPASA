@@ -53,7 +53,7 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
 
     const { data: resendData, error } = await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
-      to: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com'],
+      to: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: `New Order Received - #${orderId.slice(0, 8)}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
