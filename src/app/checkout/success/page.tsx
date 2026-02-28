@@ -4,19 +4,29 @@ import { CheckCircle2, MapPin, ArrowRight, QrCode } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import { QRCodeSVG } from "qrcode.react"
+import { PaymentVerificationForm } from "@/components/feature/PaymentVerificationForm"
 
 export default async function OrderSuccessPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  // NEXT.JS 15 FIX: searchParams must be awaited
   const resolvedParams = await searchParams;
   const orderId = typeof resolvedParams.orderId === "string" ? resolvedParams.orderId : "N/A"
-  const isPaymentPending = resolvedParams.payment === "pending"
+
+  const supabase = await createClient()
+
+  // Fetch order to check payment method
+  const { data: order } = await supabase
+    .from("orders")
+    .select("payment_method")
+    .eq("id", orderId)
+    .single()
+
+  const isEcoCash = order?.payment_method === "ecocash"
+  const isPaymentPending = resolvedParams.payment === "pending" || isEcoCash
 
   // Fetch order items to display QR codes
-  const supabase = await createClient()
   const { data: orderItems } = await supabase
     .from("order_items")
     .select(`
@@ -33,52 +43,59 @@ export default async function OrderSuccessPage({
       <div className="grid gap-8 md:grid-cols-2 w-full max-w-4xl">
 
         {/* SUCCESS MESSAGE */}
-        <Card className="text-center border-green-100 shadow-lg h-fit">
-          <CardHeader>
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 animate-in zoom-in duration-300">
-                <CheckCircle2 className="h-10 w-10 text-green-600" />
+        <div className="space-y-4">
+          <Card className="text-center border-green-100 shadow-lg h-fit">
+            <CardHeader>
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 animate-in zoom-in duration-300">
+                  <CheckCircle2 className="h-10 w-10 text-green-600" />
+                </div>
               </div>
-            </div>
-            <CardTitle className="text-2xl font-bold text-green-700">Order Received!</CardTitle>
-            {isPaymentPending && (
-              <p className="text-sm font-medium text-amber-600 bg-amber-50 py-1 px-3 rounded-full mx-auto mt-2 inline-block">
-                Payment Pending Confirmation
+              <CardTitle className="text-2xl font-bold text-green-700">Order Received!</CardTitle>
+              {isPaymentPending && (
+                <p className="text-sm font-medium text-amber-600 bg-amber-50 py-1 px-3 rounded-full mx-auto mt-2 inline-block">
+                  Payment Pending Confirmation
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-muted-foreground">
+                Thank you for your purchase. {isEcoCash
+                  ? "Your order has been logged. Once you complete the EcoCash payment, please verify it below."
+                  : isPaymentPending
+                    ? "We are currently waiting for payment confirmation from Paynow."
+                    : "Your order has been confirmed and is being processed."}
               </p>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-muted-foreground">
-              Thank you for your purchase. {isPaymentPending
-                ? "We are currently waiting for payment confirmation from Paynow."
-                : "Your order has been confirmed and is being processed."}
-            </p>
 
-            <div className="rounded-lg bg-muted/50 p-4 border border-dashed">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Order Reference</p>
-              <p className="font-mono text-xl font-bold tracking-widest text-primary mt-1">
-                {orderId !== "N/A" ? orderId.slice(0, 8).toUpperCase() : "REF-ERROR"}
-              </p>
-            </div>
+              <div className="rounded-lg bg-muted/50 p-4 border border-dashed">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Order Reference</p>
+                <p className="font-mono text-xl font-bold tracking-widest text-primary mt-1">
+                  {orderId !== "N/A" ? orderId.slice(0, 8).toUpperCase() : "REF-ERROR"}
+                </p>
+              </div>
 
-            <div className="space-y-3 pt-2">
-              <Button asChild className="w-full" size="lg">
-                <Link href={`/orders/${orderId}/track`}>
-                  <MapPin className="mr-2 h-4 w-4" /> Track Order Status
-                </Link>
-              </Button>
+              <div className="space-y-3 pt-2">
+                <Button asChild className="w-full" size="lg">
+                  <Link href={`/orders/${orderId}/track`}>
+                    <MapPin className="mr-2 h-4 w-4" /> Track Order Status
+                  </Link>
+                </Button>
 
-              <Button variant="outline" asChild className="w-full">
-                <Link href="/products">
-                  Continue Shopping <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/products">
+                    Continue Shopping <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* VERIFICATION FORM FOR ECOCASH */}
+          {isEcoCash && <PaymentVerificationForm orderId={orderId} />}
+        </div>
 
         {/* QR CODES SECTION */}
-        <Card className="border-slate-100 shadow-xl overflow-hidden flex flex-col">
+        <Card className="border-slate-100 shadow-xl overflow-hidden flex flex-col h-fit">
           <CardHeader className="bg-slate-900 text-white">
             <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
               <QrCode className="h-5 w-5" /> Digital Receipts

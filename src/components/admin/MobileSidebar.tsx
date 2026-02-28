@@ -12,7 +12,7 @@ import {
     Bell,            // Waitlists
     Package,         // Products
     Settings,        // Settings
-    Zap              // Mara Go
+    Brain             // Charon
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -33,7 +33,7 @@ export function MobileSidebar() {
         { href: "/admin/products", label: "Products", icon: Package },
         { href: "/admin/customers", label: "Customers", icon: Users },
         { href: "/admin/settings", label: "Settings", icon: Settings },
-        { href: "/admin/mara-go", label: "Mara Go", icon: Zap },
+        { href: "/admin/charon", label: "Charon", icon: Brain },
     ]
 
     return (

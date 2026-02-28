@@ -20,7 +20,7 @@ type OrderInput = {
   cartItems: CartItemInput[]
 }
 
-import { sendOrderEmail } from "./email-actions"
+import { sendOrderEmail, sendCustomerOrderEmail } from "./email-actions"
 
 export async function placeOrder(input: OrderInput) {
   const supabase = await createClient()
@@ -113,23 +113,28 @@ export async function placeOrder(input: OrderInput) {
     throw new Error("Order created, but failed to save items.")
   }
 
-  // 8. Send Email Notification
+  // 8. Send Email Notifications
+  const emailProps = {
+    orderId: order.id,
+    customerName: `${input.firstName} ${input.lastName}`,
+    email: input.email,
+    phone: input.phone,
+    address: `${input.address}, ${input.suburb}, ${input.city}`,
+    items: orderItemsData.map(i => ({
+      id: i.product_id,
+      name: i.name || "Product",
+      quantity: i.quantity,
+      price: i.unit_price
+    })),
+    total: totalAmount,
+    paymentMethod: input.paymentMethod,
+  };
+
   try {
-    await sendOrderEmail({
-      orderId: order.id,
-      customerName: `${input.firstName} ${input.lastName}`,
-      email: input.email,
-      phone: input.phone,
-      address: `${input.address}, ${input.suburb}, ${input.city}`,
-      items: orderItemsData.map(i => ({
-        id: i.product_id, // Pass product ID for QR code
-        name: i.name || "Product",
-        quantity: i.quantity,
-        price: i.unit_price
-      })),
-      total: totalAmount,
-      paymentMethod: input.paymentMethod,
-    })
+    // Notify ADMIN
+    await sendOrderEmail(emailProps);
+    // Notify CUSTOMER
+    await sendCustomerOrderEmail(emailProps);
   } catch (emailErr) {
     console.error("Non-fatal email error:", emailErr)
   }
@@ -144,4 +149,45 @@ export async function placeOrder(input: OrderInput) {
       shippingMethod: shippingMethod.name
     }
   }
+}
+
+export async function updateOrderPaymentCode(orderId: string, confirmationCode: string) {
+  const supabase = await createClient();
+
+  // 1. Update DB
+  const { data: order, error } = await supabase
+    .from("orders")
+    .update({ payment_conf_code: confirmationCode })
+    .eq("id", orderId)
+    .select("*, order_items(*, products(name))")
+    .single();
+
+  if (error) {
+    console.error("Update Payment Code Error:", error);
+    return { success: false, error: error.message };
+  }
+
+  // 2. Re-send ADMIN notification with the code
+  try {
+    await sendOrderEmail({
+      orderId: order.id,
+      customerName: `${order.first_name} ${order.last_name}`,
+      email: order.contact_email,
+      phone: order.contact_phone,
+      address: order.shipping_address,
+      items: order.order_items.map((i: any) => ({
+        id: i.product_id,
+        name: i.products?.name || "Product",
+        quantity: i.quantity,
+        price: i.unit_price
+      })),
+      total: order.total_amount,
+      paymentMethod: order.payment_method,
+      confirmationCode: confirmationCode
+    });
+  } catch (emailErr) {
+    console.error("Re-notification error:", emailErr);
+  }
+
+  return { success: true };
 }
