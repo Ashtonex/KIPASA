@@ -53,41 +53,35 @@ async function generateItemsHtml(items: EmailItem[], orderId: string, includeQr 
 export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?: string }) {
   try {
     const { orderId, customerName, email, phone, address, items, total, paymentMethod, confirmationCode } = data;
-    // ADMIN EMAIL: No QR codes to keep it lightweight for high deliverability
-    const itemsHtml = await generateItemsHtml(items, orderId, false);
-
     const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
+    const timestamp = new Date().toLocaleString();
 
-    // Send separate emails to each admin
+    console.log(`[ORDER-RELAY] Starting Redundant Dispatch for Order #${orderId} at ${timestamp}...`);
+
+    // Send separate emails to each admin using the "Pulse" structure (High Deliverability)
     const sendPromises = recipients.map(recipient =>
       resend.emails.send({
         from: 'Kipasa Store <david@kipasastore.com>',
         to: recipient,
-        subject: `Order Alert: #${orderId.slice(0, 8)}`, // Shorter subject
+        subject: `NEW ORDER ALERT: #${orderId.slice(0, 8)} [${timestamp}]`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #333;">Order Notification</h2>
-            <p><strong>Ref:</strong> #${orderId}</p>
+          <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px; max-width: 600px; margin: auto;">
+            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Order Received</h1>
+            <p><strong>Order ID:</strong> #${orderId}</p>
             <p><strong>Customer:</strong> ${customerName}</p>
-            <p><strong>Contact:</strong> ${phone} | ${email}</p>
-            <p><strong>Method:</strong> ${paymentMethod.toUpperCase()}</p>
+            <p><strong>Payment:</strong> ${paymentMethod.toUpperCase()}</p>
+            <p><strong>Total:</strong> $${total.toFixed(2)}</p>
             ${confirmationCode ? `<p><strong>Verify Code:</strong> ${confirmationCode}</p>` : ''}
-
-            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-              <tr style="background-color: #f9f9f9; font-size: 12px;">
-                <th style="padding: 8px; text-align: left;">Item</th>
-                <th style="padding: 8px; text-align: center;">Qty</th>
-                <th style="padding: 8px; text-align: right;">Price</th>
-              </tr>
-              ${itemsHtml}
-            </table>
-
-            <div style="margin-top: 15px; text-align: right; border-top: 1px solid #eee; padding-top: 10px;">
-              <strong>Total: $${total.toFixed(2)}</strong>
+            
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px;">
+               <p style="margin: 0; font-weight: bold;">Brief Checklist:</p>
+               <ul style="margin-top: 5px; font-size: 14px;">
+                 ${items.map(i => `<li>${i.name} x${i.quantity}</li>`).join('')}
+               </ul>
             </div>
 
-            <p style="font-size: 10px; color: #999; margin-top: 30px;">
-              View full details in the Admin Dashboard.
+            <p style="font-size: 11px; color: #666; margin-top: 20px;">
+              System generated at ${timestamp}. Check Admin Dashboard for full fulfillment.
             </p>
           </div>
         `,
@@ -95,14 +89,18 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     );
 
     const results = await Promise.all(sendPromises);
+
+    // EXPLICIT LOGGING FOR USER DEBUGGING
+    results.forEach((r, i) => {
+      if (r.error) {
+        console.error(`[RELAY-ERROR] ${recipients[i]}:`, r.error);
+      } else {
+        console.log(`[RELAY-SUCCESS] ${recipients[i]}: ID ${r.data?.id}`);
+      }
+    });
+
     const success = results.some(r => !r.error);
-
-    console.log("Admin Email Dispatch Results:", results.map((r, i) => ({ email: recipients[i], error: r.error })));
-
-    if (!success) {
-      console.error("All email attempts failed:", results.map(r => r.error));
-      return { success: false, error: results[0].error };
-    }
+    if (!success) return { success: false, error: results[0].error };
 
     return { success: true };
   } catch (err: any) {
