@@ -12,6 +12,7 @@ export async function sendReceiptEmail(email: string, orderId: string, amount: n
     await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
+      bcc: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: `Receipt for Order #${orderId.slice(0, 8).toUpperCase()}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -42,6 +43,7 @@ export async function sendOrderConfirmation(email: string, orderId: string, tota
     await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
+      bcc: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: `Order Confirmed - Kipasa Store #${orderId.slice(0, 8)}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -78,6 +80,7 @@ export async function sendShippingEmail(email: string, orderId: string, tracking
     await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
+      bcc: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: `Your Kipasa Order #${orderId.slice(0, 8)} has Shipped!`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -116,6 +119,7 @@ export async function sendReadyForPickupEmail(email: string, orderId: string, fi
     await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
+      bcc: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: "Ready for Collection! 📍 Kipasa Store Mutare",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -161,6 +165,7 @@ export async function sendAbandonedCartEmail(email: string, firstName: string, c
     await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: email,
+      bcc: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
       subject: "You left something behind! 🛒",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee;">

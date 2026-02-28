@@ -51,56 +51,64 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     const { orderId, customerName, email, phone, address, items, total, paymentMethod, confirmationCode } = data;
     const itemsHtml = await generateItemsHtml(items, orderId);
 
-    const { data: resendData, error } = await resend.emails.send({
-      from: 'Kipasa Store <david@kipasastore.com>',
-      to: ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'],
-      subject: `New Order Received - #${orderId.slice(0, 8)}`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #333;">New Order Placement</h2>
-          <p><strong>Order ID:</strong> #${orderId}</p>
-          <p><strong>Customer:</strong> ${customerName}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
-          <p><strong>Address:</strong> ${address}</p>
-          <p><strong>Payment Method:</strong> ${paymentMethod.toUpperCase()}</p>
-          ${confirmationCode ? `<p><strong>EcoCash Confirmation:</strong> <span style="color: #16a34a; font-weight: bold;">${confirmationCode}</span></p>` : ''}
+    const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-              <tr style="background-color: #f9f9f9;">
-                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Item</th>
-                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
-                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
-                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Scan</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
+    // Send separate emails to each admin to bypass potential multi-recipient issues
+    const sendPromises = recipients.map(recipient =>
+      resend.emails.send({
+        from: 'Kipasa Store <david@kipasastore.com>',
+        to: recipient,
+        subject: `New Order Received - #${orderId.slice(0, 8)}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #333;">New Order Placement</h2>
+            <p><strong>Order ID:</strong> #${orderId}</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Phone:</strong> ${phone}</p>
+            <p><strong>Address:</strong> ${address}</p>
+            <p><strong>Payment Method:</strong> ${paymentMethod.toUpperCase()}</p>
+            ${confirmationCode ? `<p><strong>EcoCash Confirmation:</strong> <span style="color: #16a34a; font-weight: bold;">${confirmationCode}</span></p>` : ''}
 
-          <div style="margin-top: 20px; text-align: right;">
-            <h3>Total: $${total.toFixed(2)}</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <thead>
+                <tr style="background-color: #f9f9f9;">
+                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Item</th>
+                  <th style="padding: 8px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
+                  <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
+                  <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Scan</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div style="margin-top: 20px; text-align: right;">
+              <h3>Total: $${total.toFixed(2)}</h3>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; background-color: #f0f7ff; border-radius: 8px; font-size: 13px;">
+              <strong>Digital Receipt Protocol:</strong> Each item above has a unique QR code for verification and tracking.
+            </div>
+
+            <p style="font-size: 12px; color: #888; margin-top: 40px;">
+              This is an automated notification from your Kipasa Store.
+            </p>
           </div>
-          
-          <div style="margin-top: 30px; padding: 15px; background-color: #f0f7ff; border-radius: 8px; font-size: 13px;">
-            <strong>Digital Receipt Protocol:</strong> Each item above has a unique QR code for verification and tracking.
-          </div>
+        `,
+      })
+    );
 
-          <p style="font-size: 12px; color: #888; margin-top: 40px;">
-            This is an automated notification from your Kipasa Store.
-          </p>
-        </div>
-      `,
-    });
+    const results = await Promise.all(sendPromises);
+    const success = results.some(r => !r.error);
 
-    if (error) {
-      console.error("Resend Error:", error);
-      return { success: false, error };
+    if (!success) {
+      console.error("All email attempts failed:", results.map(r => r.error));
+      return { success: false, error: results[0].error };
     }
 
-    return { success: true, data: resendData };
+    return { success: true };
   } catch (err: any) {
     console.error("Email send exception:", err.message);
     return { success: false, error: err.message };
