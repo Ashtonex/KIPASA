@@ -25,10 +25,10 @@ export default function SupportPage() {
                 </div>
                 <div>
                   <p className="font-semibold">Phone / WhatsApp</p>
-                  <p className="text-muted-foreground">+263 77 690 5673</p>
+                  <p className="text-muted-foreground">+263 77 236 8435</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-4">
                 <div className="bg-primary/10 p-3 rounded-full text-primary">
                   <Mail className="h-5 w-5" />
@@ -59,7 +59,7 @@ export default function SupportPage() {
             <CardDescription>Fill out the form below and we'll get back to you within 24 hours.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ContactForm /> 
+            <ContactForm />
           </CardContent>
         </Card>
       </div>
