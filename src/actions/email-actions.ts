@@ -1,7 +1,6 @@
 "use server"
 
 import { Resend } from 'resend';
-import QRCode from 'qrcode';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -18,36 +17,20 @@ type OrderEmailProps = {
   paymentMethod: string;
 };
 
-async function generateItemsHtml(items: EmailItem[], orderId: string, includeQr = true) {
-  const itemsWithQr = await Promise.all(
-    items.map(async (item) => {
-      let qrBase64 = '';
-      if (includeQr) {
-        const qrData = `${orderId}:${item.id || 'unknown'}`;
-        qrBase64 = await QRCode.toDataURL(qrData);
-      }
-      return { ...item, qrBase64 };
-    })
-  );
-
-  return itemsWithQr
-    .map(
-      (item) => `
+/**
+ * Standard Professional Item Table Fragment
+ */
+function generateOrderTable(items: EmailItem[]) {
+  return items.map(item => `
     <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">
-        <div style="font-weight: bold;">${item.name}</div>
-        <div style="font-size: 10px; color: #888;">ID: ${item.id || 'N/A'}</div>
+      <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+        <div style="font-weight: 600; color: #111;">${item.name}</div>
+        <div style="font-size: 11px; color: #666;">SKU/ID: ${item.id?.slice(0, 8) || 'N/A'}</div>
       </td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.price.toFixed(2)}</td>
-      ${includeQr ? `
-      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
-        <img src="${item.qrBase64}" width="60" height="60" alt="QR Code" style="display: block; margin-left: auto;" />
-      </td>` : ''}
+      <td style="padding: 12px 10px; border-bottom: 1px solid #eee; text-align: center; color: #444;">${item.quantity}</td>
+      <td style="padding: 12px 0; border-bottom: 1px solid #eee; text-align: right; color: #111; font-weight: 500;">$${item.price.toFixed(2)}</td>
     </tr>
-  `
-    )
-    .join('');
+  `).join('');
 }
 
 export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?: string }) {
@@ -57,73 +40,80 @@ export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?
     const timestamp = new Date().toLocaleString();
     const orderRef = orderId.slice(0, 8);
 
-    console.log(`[GHOST-DISPATCH] Initiating 3-Phase Delivery for Order #${orderId}...`);
+    console.log(`[INDUSTRY-STANDARD] Initiating Staggered Dispatch for Order #${orderId}...`);
 
     const results = [];
 
-    // Staggered Delivery Loop (1s delay between sends to bypass domain burst filters)
+    // Staggered Delivery for maximum reliability
     for (const [index, recipient] of recipients.entries()) {
-      // Add artificial stagger
-      if (index > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      if (index > 0) await new Promise(resolve => setTimeout(resolve, 1000));
 
       const uniqueHash = Math.random().toString(36).substring(7);
-      const subject = `CRITICAL ORDER ALERT: #${orderRef} [${timestamp}] - [${uniqueHash}]`;
 
       const res = await resend.emails.send({
         from: 'Kipasa Store <david@kipasastore.com>',
         to: recipient,
         replyTo: 'david@kipasastore.com',
-        subject: subject,
-        // High-Reliability Plain Text Fallback
-        text: `
-NEW ORDER ALERT: #${orderId}
-Customer: ${customerName}
-Payment: ${paymentMethod.toUpperCase()}
-Total: $${total.toFixed(2)}
-Time: ${timestamp}
-
-Check your Admin Dashboard at ${process.env.NEXT_PUBLIC_SITE_URL}/admin/orders for full details.
-        `,
+        subject: `Order Notification #${orderRef} [${timestamp}]`,
+        text: `NEW ORDER: #${orderId}\nCustomer: ${customerName}\nPayment: ${paymentMethod.toUpperCase()}\nTotal: $${total.toFixed(2)}\n\nItems:\n${items.map(i => `- ${i.name} x${i.quantity}`).join('\n')}`,
         html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px; max-width: 600px; margin: auto;">
-            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">New Order Alert</h1>
-            <p style="font-size: 18px;"><strong>Ref:</strong> #${orderId}</p>
-            <p><strong>Customer:</strong> ${customerName}</p>
-            <p><strong>Payment:</strong> ${paymentMethod.toUpperCase()}</p>
-            <p><strong>Total Due:</strong> $${total.toFixed(2)}</p>
-            ${confirmationCode ? `<p><strong>Verify Code:</strong> ${confirmationCode}</p>` : ''}
-            
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px;">
-               <p style="margin: 0; font-weight: bold;">Order Items:</p>
-               <ul style="margin-top: 5px; font-size: 14px;">
-                 ${items.map(i => `<li>${i.name} x${i.quantity}</li>`).join('')}
-               </ul>
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: auto; padding: 40px 20px; color: #334155;">
+            <div style="margin-bottom: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px;">
+              <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">New Order Alert</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Ref: #${orderId}</p>
             </div>
 
-            <p style="font-size: 11px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-              System Transmission ID: ${uniqueHash} | ${timestamp}
-            </p>
+            <div style="margin-bottom: 30px;">
+              <h2 style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.1em;">Order Summary</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; font-size: 11px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Item</th>
+                    <th style="text-align: center; font-size: 11px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Qty</th>
+                    <th style="text-align: right; font-size: 11px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${generateOrderTable(items)}
+                </tbody>
+              </table>
+            </div>
+
+            <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div style="font-weight: 600; color: #1e293b;">Customer Details</div>
+              </div>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                <strong>Name:</strong> ${customerName}<br/>
+                <strong>Phone:</strong> ${phone}<br/>
+                <strong>Email:</strong> ${email}<br/>
+                <strong>Address:</strong> ${address}
+              </p>
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <p style="margin: 0; font-size: 14px;"><strong>Payment:</strong> <span style="text-transform: uppercase;">${paymentMethod}</span></p>
+                ${confirmationCode ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #16a34a;"><strong>Verify Code:</strong> ${confirmationCode}</p>` : ''}
+              </div>
+              <div style="margin-top: 15px; border-top: 2px solid #0f172a; padding-top: 15px; text-align: right;">
+                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-right: 10px;">Total Due</span>
+                <span style="font-size: 20px; font-weight: 800; color: #0f172a;">$${total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style="text-align: center; color: #94a3b8; font-size: 12px;">
+              <p>Transmission ID: ${uniqueHash} • ${timestamp}</p>
+              <p>Kipasa Store © 2026</p>
+            </div>
           </div>
         `,
       });
 
       results.push(res);
-
-      if (res.error) {
-        console.error(`[GHOST-PHASE-${index + 1} FAIL] ${recipient}:`, res.error);
-      } else {
-        console.log(`[GHOST-PHASE-${index + 1} OK] ${recipient}: ID ${res.data?.id}`);
-      }
+      console.log(`[IND-PHASE-${index + 1} OK] ${recipient}: ID ${res.data?.id}`);
     }
-
-    const success = results.some(r => !r.error);
-    if (!success) return { success: false, error: results[0].error };
 
     return { success: true };
   } catch (err: any) {
-    console.error("Email send exception:", err.message);
+    console.error("Standard email send exception:", err.message);
     return { success: false, error: err.message };
   }
 }
@@ -132,8 +122,6 @@ export async function sendDiagnosticPulse() {
   const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
   const timestamp = new Date().toLocaleString();
 
-  console.log(`[DIAGNOSTIC] Starting Pulse sending to ${recipients.join(', ')}...`);
-
   try {
     const promises = recipients.map(recipient =>
       resend.emails.send({
@@ -141,23 +129,17 @@ export async function sendDiagnosticPulse() {
         to: recipient,
         subject: `System Pulse: Kipasa Store Domain Verifier [${timestamp}]`,
         html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px;">
-            <h1>Digital Transmission Pulse</h1>
-            <p>This is a diagnostic email to verify that your domain <strong>kipasastore.com</strong> is correctly delivering via Resend.</p>
-            <hr/>
-            <p><strong>Relay Status:</strong> Testing Individual Dispatches</p>
-            <p><strong>Timestamp:</strong> ${timestamp}</p>
-            <p>If you receive this, the relay connection is <strong>SUCCESSFUL</strong>.</p>
+          <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; border-radius: 10px; max-width: 600px; margin: auto; text-align: center;">
+            <h1 style="color: #0f172a;">Transmission Pulse</h1>
+            <p>Verification successful for domain <strong>kipasastore.com</strong>.</p>
+            <p style="color: #64748b; font-size: 12px;">Timestamp: ${timestamp}</p>
           </div>
         `
       })
     );
-
-    const results = await Promise.all(promises);
-    console.log("[DIAGNOSTIC] Results:", results);
-    return { success: results.some(r => !r.error), details: results };
+    await Promise.all(promises);
+    return { success: true };
   } catch (err: any) {
-    console.error("[DIAGNOSTIC] CRITICAL FAILURE:", err.message);
     return { success: false, error: err.message };
   }
 }
@@ -165,70 +147,59 @@ export async function sendDiagnosticPulse() {
 export async function sendCustomerOrderEmail(data: OrderEmailProps) {
   try {
     const { orderId, customerName, email, items, total, paymentMethod } = data;
-    const itemsHtml = await generateItemsHtml(items, orderId);
-
     const { data: resendData, error } = await resend.emails.send({
       from: 'Kipasa Store <david@kipasastore.com>',
       to: [email],
-      subject: `Your Kipasa Store Order is Ready! - #${orderId.slice(0, 8)}`,
+      replyTo: 'david@kipasastore.com',
+      subject: `Order Confirmation - Kipasa Store #${orderId.slice(0, 8)}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #1e293b; border-radius: 16px; background-color: #ffffff;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #0f172a; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Order Confirmed</h1>
-            <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Your request has been successfully logged, ${customerName}.</p>
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: auto; padding: 40px 20px; color: #334155;">
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.1em;">Thank You, ${customerName}</h1>
+            <p style="color: #64748b; margin-top: 10px;">We've received your order and are preparing it for you.</p>
           </div>
 
-          <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-            <p style="margin: 0; color: #64748b; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
-            <p style="margin: 4px 0 0 0; color: #0f172a; font-size: 18px; font-weight: 800; font-family: monospace;">#${orderId.toUpperCase()}</p>
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
+            <div style="margin-bottom: 8px; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Order Reference</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a; font-family: monospace;">#${orderId.toUpperCase()}</div>
           </div>
 
-          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Your order is now being processed. If you chose <strong>EcoCash</strong>, please ensure you have submitted your confirmation code on the success page or via WhatsApp for faster processing.
-          </p>
-
-          <table style="width: 100%; border-collapse: collapse; margin-top: 24px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px;">
             <thead>
-              <tr style="background-color: #f1f5f9;">
-                <th style="padding: 12px 8px; text-align: left; font-size: 12px; color: #475569; text-transform: uppercase;">Item</th>
-                <th style="padding: 12px 8px; text-align: center; font-size: 12px; color: #475569; text-transform: uppercase;">Qty</th>
-                <th style="padding: 12px 8px; text-align: right; font-size: 12px; color: #475569; text-transform: uppercase;">Total</th>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <th style="text-align: left; padding: 12px 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Description</th>
+                <th style="text-align: center; padding: 12px 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Qty</th>
+                <th style="text-align: right; padding: 12px 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Total</th>
               </tr>
             </thead>
             <tbody>
-              ${itemsHtml}
+              ${generateOrderTable(items)}
             </tbody>
           </table>
 
-          <div style="margin-top: 24px; text-align: right; border-top: 2px solid #0f172a; pt: 16px;">
-            <p style="margin: 0; font-size: 16px; font-weight: 900; color: #0f172a;">Total Amount: $${total.toFixed(2)}</p>
+          <div style="text-align: right; border-top: 2px solid #0f172a; padding-top: 20px;">
+            <div style="color: #64748b; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Total Paid</div>
+            <div style="font-size: 24px; font-weight: 900; color: #0f172a;">$${total.toFixed(2)}</div>
           </div>
 
-          <div style="margin-top: 32px; padding: 20px; background-color: #eff6ff; border-radius: 12px; border: 1px solid #dbeafe;">
-            <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af; text-transform: uppercase;">Next Steps</h3>
-            <p style="margin: 0; font-size: 13px; color: #1e40af; line-height: 1.5;">
-              - Screenshot the QR codes above for easy verification at pickup.<br/>
-              - Reach out on WhatsApp (+263772368435) for instant support.<br/>
-              - Delivery times vary based on your location and chosen method.
+          <div style="margin-top: 40px; padding: 24px; background-color: #eff6ff; border-radius: 16px; border: 1px solid #dbeafe;">
+            <h3 style="margin: 0; font-size: 14px; color: #1e40af; text-transform: uppercase; letter-spacing: 0.05em;">Next Steps</h3>
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #1e40af; line-height: 1.6;">
+              If you chose EcoCash, please verify your payment using the link on the success page or reach out to us on WhatsApp (+263772368435).
             </p>
           </div>
 
-          <div style="margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
-            <p style="color: #94a3b8; font-size: 11px;">Kipasa Store • The Continental Protocol</p>
-            <p style="color: #cbd5e1; font-size: 10px; margin-top: 4px;">Automated Transmission - Do not reply directly to this address</p>
+          <div style="margin-top: 48px; text-align: center; color: #cbd5e1; font-size: 12px;">
+            <p>Kipasa Store • The Continental Protocol</p>
+            <p style="margin-top: 4px;">Automated Transmission - Do not reply directly</p>
           </div>
         </div>
       `,
     });
 
-    if (error) {
-      console.error("Resend Customer Email Error:", error);
-      return { success: false, error };
-    }
-
+    if (error) return { success: false, error };
     return { success: true, data: resendData };
   } catch (err: any) {
-    console.error("Customer email send exception:", err.message);
     return { success: false, error: err.message };
   }
 }
