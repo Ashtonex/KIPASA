@@ -79,7 +79,7 @@ export function CheckoutForm({ shippingMethods }: { shippingMethods: ShippingMet
       if (result.success && result.orderId) {
         // Construct WhatsApp Message
         const orderIdShort = result.orderId.slice(0, 8);
-        const storeContact = "+263772368435";
+        const storeContact = "263772368435";
         const details = result.orderDetails;
 
         let message = `*NEW ORDER FROM KIPASA STORE*\n\n`;
