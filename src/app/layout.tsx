@@ -8,6 +8,8 @@ import { Footer } from "@/components/layout/Footer"
 import { CartProvider } from "@/context/CartContext"
 import { Toaster } from "sonner" // Ensure you have installed sonner: npm install sonner
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton"
+import { LiveSalesNotifier } from "@/components/feature/LiveSalesNotifier"
+import { RecoveryNudge } from "@/components/feature/RecoveryNudge"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -63,6 +65,8 @@ export default function RootLayout({
             </main>
             <Footer />
             <WhatsAppButton />
+            <LiveSalesNotifier />
+            <RecoveryNudge />
 
             {/* 2. Global Toast Notifications */}
             <Toaster richColors position="top-right" closeButton />

@@ -1,6 +1,7 @@
 import { getCharonIntelligence } from "@/actions/charon-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, Package, AlertTriangle, Lightbulb, TrendingDown, DollarSign, Brain } from "lucide-react"
+import { CharonBriefing } from "@/components/feature/CharonBriefing"
 
 export default async function CharonPage() {
     const data = await getCharonIntelligence()
@@ -14,14 +15,18 @@ export default async function CharonPage() {
     return (
         <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 space-y-8">
             {/* HEADER */}
-            <div className="flex items-center gap-4">
-                <div className="h-14 w-14 bg-slate-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-slate-300">
-                    <Brain className="h-8 w-8 text-indigo-400 animate-pulse" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 bg-slate-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-slate-300">
+                        <Brain className="h-8 w-8 text-indigo-400 animate-pulse" />
+                    </div>
+                    <div>
+                        <h1 className="text-4xl font-black uppercase tracking-tighter text-slate-900 italic">Charon_Intelligence</h1>
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Predictive Sales & Procurement Engine</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-4xl font-black uppercase tracking-tighter text-slate-900 italic">Charon_Intelligence</h1>
-                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Predictive Sales & Procurement Engine</p>
-                </div>
+
+                <CharonBriefing data={data} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -106,8 +111,8 @@ export default async function CharonPage() {
                                     <div className="flex items-center gap-2">
                                         <span className="font-black text-slate-900 uppercase tracking-tight">{s.name}</span>
                                         <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${s.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-100' :
-                                                s.priority === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                                    'bg-slate-50 text-slate-400'
+                                            s.priority === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                                'bg-slate-50 text-slate-400'
                                             }`}>
                                             {s.priority}_Priority
                                         </span>

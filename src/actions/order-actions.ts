@@ -135,8 +135,18 @@ export async function placeOrder(input: OrderInput) {
     await sendOrderEmail(emailProps);
     // Notify CUSTOMER
     await sendCustomerOrderEmail(emailProps);
+
+    // 9. AWARD LOYALTY POINTS (NEW: Market Dominance Protocol)
+    if (user) {
+      const pointsToAward = Math.floor(totalAmount);
+      const { error: loyaltyError } = await supabase.rpc('increment_loyalty_points', {
+        user_id: user.id,
+        points: pointsToAward
+      });
+      if (loyaltyError) console.error("Loyalty awarding error:", loyaltyError);
+    }
   } catch (emailErr) {
-    console.error("Non-fatal email error:", emailErr)
+    console.error("Non-fatal post-order error:", emailErr)
   }
 
   return {
