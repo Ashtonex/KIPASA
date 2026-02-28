@@ -18,11 +18,14 @@ type OrderEmailProps = {
   paymentMethod: string;
 };
 
-async function generateItemsHtml(items: EmailItem[], orderId: string) {
+async function generateItemsHtml(items: EmailItem[], orderId: string, includeQr = true) {
   const itemsWithQr = await Promise.all(
     items.map(async (item) => {
-      const qrData = `${orderId}:${item.id || 'unknown'}`;
-      const qrBase64 = await QRCode.toDataURL(qrData);
+      let qrBase64 = '';
+      if (includeQr) {
+        const qrData = `${orderId}:${item.id || 'unknown'}`;
+        qrBase64 = await QRCode.toDataURL(qrData);
+      }
       return { ...item, qrBase64 };
     })
   );
@@ -37,9 +40,10 @@ async function generateItemsHtml(items: EmailItem[], orderId: string) {
       </td>
       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.price.toFixed(2)}</td>
+      ${includeQr ? `
       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
         <img src="${item.qrBase64}" width="60" height="60" alt="QR Code" style="display: block; margin-left: auto;" />
-      </td>
+      </td>` : ''}
     </tr>
   `
     )
@@ -49,51 +53,41 @@ async function generateItemsHtml(items: EmailItem[], orderId: string) {
 export async function sendOrderEmail(data: OrderEmailProps & { confirmationCode?: string }) {
   try {
     const { orderId, customerName, email, phone, address, items, total, paymentMethod, confirmationCode } = data;
-    const itemsHtml = await generateItemsHtml(items, orderId);
+    // ADMIN EMAIL: No QR codes to keep it lightweight for high deliverability
+    const itemsHtml = await generateItemsHtml(items, orderId, false);
 
     const recipients = ['harvestinventive@gmail.com', 'kipasagiftshop@gmail.com', 'ashytana@gmail.com'];
 
-    // Send separate emails to each admin to bypass potential multi-recipient issues
+    // Send separate emails to each admin
     const sendPromises = recipients.map(recipient =>
       resend.emails.send({
         from: 'Kipasa Store <david@kipasastore.com>',
         to: recipient,
-        subject: `New Order Received - #${orderId.slice(0, 8)}`,
+        subject: `Order Alert: #${orderId.slice(0, 8)}`, // Shorter subject
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #333;">New Order Placement</h2>
-            <p><strong>Order ID:</strong> #${orderId}</p>
+            <h2 style="color: #333;">Order Notification</h2>
+            <p><strong>Ref:</strong> #${orderId}</p>
             <p><strong>Customer:</strong> ${customerName}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone}</p>
-            <p><strong>Address:</strong> ${address}</p>
-            <p><strong>Payment Method:</strong> ${paymentMethod.toUpperCase()}</p>
-            ${confirmationCode ? `<p><strong>EcoCash Confirmation:</strong> <span style="color: #16a34a; font-weight: bold;">${confirmationCode}</span></p>` : ''}
+            <p><strong>Contact:</strong> ${phone} | ${email}</p>
+            <p><strong>Method:</strong> ${paymentMethod.toUpperCase()}</p>
+            ${confirmationCode ? `<p><strong>Verify Code:</strong> ${confirmationCode}</p>` : ''}
 
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <thead>
-                <tr style="background-color: #f9f9f9;">
-                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Item</th>
-                  <th style="padding: 8px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
-                  <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
-                  <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Scan</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+              <tr style="background-color: #f9f9f9; font-size: 12px;">
+                <th style="padding: 8px; text-align: left;">Item</th>
+                <th style="padding: 8px; text-align: center;">Qty</th>
+                <th style="padding: 8px; text-align: right;">Price</th>
+              </tr>
+              ${itemsHtml}
             </table>
 
-            <div style="margin-top: 20px; text-align: right;">
-              <h3>Total: $${total.toFixed(2)}</h3>
-            </div>
-            
-            <div style="margin-top: 30px; padding: 15px; background-color: #f0f7ff; border-radius: 8px; font-size: 13px;">
-              <strong>Digital Receipt Protocol:</strong> Each item above has a unique QR code for verification and tracking.
+            <div style="margin-top: 15px; text-align: right; border-top: 1px solid #eee; padding-top: 10px;">
+              <strong>Total: $${total.toFixed(2)}</strong>
             </div>
 
-            <p style="font-size: 12px; color: #888; margin-top: 40px;">
-              This is an automated notification from your Kipasa Store.
+            <p style="font-size: 10px; color: #999; margin-top: 30px;">
+              View full details in the Admin Dashboard.
             </p>
           </div>
         `,
